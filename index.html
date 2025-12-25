@@ -7,86 +7,105 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; overflow: hidden; }
-    #map { height: 100vh; width: 100%; z-index: 1; }
+    :root {
+      --primary-white: #ffffff;
+      --bg-light: #f8f9fa;
+      --border-color: #dee2e6;
+      --text-main: #343a40;
+      --accent-orange: #fd7e14;
+      --accent-blue: #0d6efd;
+    }
+
+    body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-light); overflow: hidden; color: var(--text-main); }
+    #map { height: 100vh; width: 100%; z-index: 1; background: #eee; }
     
+    /* --- GIAO DIỆN TRẮNG HIỆN ĐẠI --- */
     #top-panel {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-      background: rgba(255, 255, 255, 0.95); padding: 8px 12px;
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
+      background: var(--primary-white); padding: 12px 15px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      border-radius: 8px; border: 1px solid var(--border-color);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    .input-group { display: flex; align-items: center; gap: 4px; }
-    input[type="number"], input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
-    #soto, #sothua { width: 50px; }
-    #tenchu { width: 100px; }
-
-    .checkbox-group { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: bold; color: #2c3e50; }
+    .input-group { display: flex; align-items: center; gap: 6px; }
     
-    button {
-      padding: 8px 10px; border: none; border-radius: 4px; 
-      cursor: pointer; font-weight: bold; font-size: 12px;
-      display: flex; align-items: center; gap: 4px;
+    input[type="number"], input[type="text"], input[type="file"] { 
+      padding: 8px 12px; border: 1px solid var(--border-color); 
+      border-radius: 6px; font-size: 13px; outline: none;
+      transition: border-color 0.2s;
     }
-    .btn-search { background: #e67e22; color: white; }
-    .btn-clear { background: #95a5a6; color: white; }
-    .btn-locate { background: #3498db; color: white; }
-    .btn-direction { background: #27ae60; color: white; }
+    input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(13,110,253,0.1); }
+    
+    #soto, #sothua { width: 50px; }
+    #tenchu { width: 120px; }
+    #file-input { max-width: 130px; background: #f1f3f5; cursor: pointer; }
+
+    .checkbox-group { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .checkbox-group input { width: 17px; height: 17px; cursor: pointer; }
+
+    button {
+      padding: 9px 14px; border: none; border-radius: 6px; 
+      cursor: pointer; font-weight: 600; font-size: 12px;
+      display: flex; align-items: center; gap: 5px; transition: 0.3s;
+    }
+    .btn-search { background: var(--accent-orange); color: white; }
+    .btn-search:hover { background: #e86d05; }
+    .btn-clear { background: #e9ecef; color: #495057; }
+    .btn-clear:hover { background: #dee2e6; }
+    .btn-locate { background: var(--accent-blue); color: white; }
+    .btn-locate:hover { background: #0b5ed7; }
+    .btn-direction { background: #198754; color: white; }
 
     #info-bar {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-      background: #fff; padding: 10px 15px; display: none;
-      overflow-x: auto; border-top: 3px solid #e67e22;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      background: var(--primary-white); padding: 12px 20px; display: none;
+      overflow-x: auto; border-top: 1px solid var(--border-color);
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     }
 
-    .info-container { display: flex; gap: 18px; align-items: center; min-width: max-content; }
-    .info-item { display: flex; flex-direction: column; border-right: 1px solid #eee; padding-right: 15px; }
-    .info-label { font-size: 10px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; }
-    .info-value { font-size: 14px; color: #2c3e50; font-weight: bold; white-space: nowrap; }
+    .info-container { display: flex; gap: 25px; align-items: center; min-width: max-content; }
+    .info-item { display: flex; flex-direction: column; }
+    .info-label { font-size: 11px; color: #6c757d; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { font-size: 15px; color: var(--text-main); font-weight: 700; white-space: nowrap; }
 
-    /* CẬP NHẬT NHÃN CẠNH CÓ XOAY */
-    .edge-label-container {
-        background: transparent;
-        border: none;
-    }
+    /* NHÃN CẠNH XOAY */
+    .edge-label-container { background: transparent; border: none; }
     .edge-label-inner {
-      background: #ffffff; 
-      border: 1px solid #ff0000; 
-      border-radius: 3px;
-      padding: 1px 4px; 
-      font-size: 11px; 
-      font-weight: bold; 
-      color: #ff0000;
-      white-space: nowrap; 
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transform-origin: center;
+      background: var(--primary-white); border: 1.5px solid #dc3545; 
+      border-radius: 4px; padding: 2px 5px; font-size: 11px; font-weight: 800; 
+      color: #dc3545; white-space: nowrap; box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+      display: inline-flex; align-items: center; justify-content: center;
     }
 
     .gps-fixed { animation: pulse 2s infinite; border: 2px solid white; border-radius: 50%; }
     @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7); }
-      70% { box-shadow: 0 0 0 12px rgba(52, 152, 219, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(52, 152, 219, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
     }
 
     #loading-status {
-      position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
-      background: rgba(44, 62, 80, 0.9); color: white; padding: 8px 15px;
-      border-radius: 20px; font-size: 12px; display: none; z-index: 2000;
+      position: fixed; top: 85px; left: 50%; transform: translateX(-50%);
+      background: var(--text-main); color: white; padding: 10px 20px;
+      border-radius: 30px; font-size: 13px; display: none; z-index: 2000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 600px) {
+      #top-panel { top: 5px; left: 5px; right: 5px; padding: 8px; gap: 6px; }
+      #tenchu { width: 85px; }
+      button { padding: 8px 10px; font-size: 11px; }
+      #file-input { max-width: 100px; }
     }
   </style>
 </head>
 <body>
 
-<div id="loading-status">📡 Đang xác định vị trí...</div>
+<div id="loading-status">🛰️ Đang đồng bộ vị trí vệ tinh...</div>
 
 <div id="top-panel">
-  <input type="file" id="file-input" accept=".geojson" style="max-width: 100px; font-size: 10px;">
+  <input type="file" id="file-input" accept=".geojson">
   <div class="input-group">
     <input type="number" id="soto" placeholder="Tờ">
     <input type="number" id="sothua" placeholder="Thửa">
@@ -95,14 +114,14 @@
   <label class="checkbox-group">
     <input type="checkbox" id="chk-edges" checked onchange="toggleEdges()"> Hiện Cạnh
   </label>
-  <button class="btn-search" onclick="searchParcel()">🔍</button>
+  <button class="btn-search" onclick="searchParcel()">🔍 TÌM</button>
   <button class="btn-clear" onclick="clearSearch()">✖</button>
   <button class="btn-locate" onclick="locateUser()">📍 VỊ TRÍ</button>
 </div>
 
 <div id="info-bar">
   <div class="info-container">
-    <div id="info-content" style="display: flex; gap: 15px;"></div>
+    <div id="info-content" style="display: flex; gap: 20px;"></div>
     <div id="direction-btn-container"></div>
   </div>
 </div>
@@ -117,11 +136,13 @@
     maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3']
   }).addTo(map);
 
-  let dataLayer = null, highlightLayer = null, geojsonData = null, userMarker = null;
+  let dataLayer = null, highlightLayer = null, geojsonData = null, userMarker = null, currentSelectedFeature = null;
   let edgeLabelsLayer = L.layerGroup().addTo(map);
-  let currentSelectedFeature = null;
 
-  const fieldMapping = { "SHBANDO": "Tờ", "SHTHUA": "Thửa", "DIENTICH": "DT (m2)", "KHLOAIDAT": "Loại Đất", "TENCHU": "Tên Chủ" };
+  const fieldMapping = { 
+    "SHBANDO": "Tờ", "SHTHUA": "Thửa", "DIENTICH": "Diện tích (m²)", 
+    "KHLOAIDAT": "Loại đất", "TENCHU": "Tên chủ" 
+  };
 
   document.getElementById('file-input').onchange = function(e) {
     const reader = new FileReader();
@@ -137,7 +158,7 @@
   function renderBoundaries(data) {
     if (dataLayer) map.removeLayer(dataLayer);
     dataLayer = L.geoJSON(data, {
-      style: { color: "#ffff00", weight: 1, fillOpacity: 0.05 },
+      style: { color: "#ffeb3b", weight: 1.5, fillOpacity: 0.1 },
       onEachFeature: function(feature, layer) {
         layer.on('click', function(e) { processSelection(feature, layer); L.DomEvent.stopPropagation(e); });
       }
@@ -149,7 +170,8 @@
     const s = document.getElementById('soto').value.trim();
     const t = document.getElementById('sothua').value.trim();
     const n = document.getElementById('tenchu').value.trim().toLowerCase();
-    if (!geojsonData) return alert("Vui lòng chọn file dữ liệu!");
+    if (!geojsonData) return alert("Vui lòng nạp file GeoJSON!");
+
     let foundFeature = null, foundLayer = null;
     dataLayer.eachLayer(function(layer) {
       const p = layer.feature.properties;
@@ -157,8 +179,9 @@
       const matchN = n ? (String(p.TENCHU || "").toLowerCase().includes(n)) : false;
       if (matchPT || matchN) { foundFeature = layer.feature; foundLayer = layer; }
     });
+
     if (foundFeature) processSelection(foundFeature, foundLayer);
-    else alert("Không tìm thấy thửa đất!");
+    else alert("Không tìm thấy thửa đất yêu cầu!");
   }
 
   function processSelection(feature, layer) {
@@ -170,39 +193,28 @@
     map.fitBounds(layer.getBounds(), { padding: [100, 100] });
   }
 
-  // --- HÀM HIỂN THỊ CẠNH CÓ TỰ ĐỘNG XOAY ---
   function toggleEdges() {
     if (!currentSelectedFeature) return;
     edgeLabelsLayer.clearLayers();
     if (document.getElementById('chk-edges').checked) {
-      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
+      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? 
+                   currentSelectedFeature.geometry.coordinates[0] : 
+                   currentSelectedFeature.geometry.coordinates[0][0];
       
       for (let i = 0; i < coords.length - 1; i++) {
         let p1 = L.latLng(coords[i][1], coords[i][0]);
         let p2 = L.latLng(coords[i+1][1], coords[i+1][0]);
         let dist = p1.distanceTo(p2);
-        
         if (dist > 0.5) {
           let mid = [(p1.lat + p2.lat)/2, (p1.lng + p2.lng)/2];
-          
-          // Tính góc xoay (bearing) giữa 2 điểm
-          // Sử dụng công thức atan2 trên tọa độ màn hình xấp xỉ
           let angle = Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
-          
-          // Chuẩn hóa góc để chữ luôn hướng lên trên (dễ đọc)
-          let rotation = -angle; 
+          let rotation = -angle;
           if (rotation > 90) rotation -= 180;
           if (rotation < -90) rotation += 180;
 
           let labelHtml = `<div class="edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(1)}m</div>`;
-          
           L.marker(mid, { 
-            icon: L.divIcon({ 
-                className: 'edge-label-container', 
-                html: labelHtml, 
-                iconSize: [40, 20],
-                iconAnchor: [20, 10] 
-            }), 
+            icon: L.divIcon({ className: 'edge-label-container', html: labelHtml, iconSize: [40, 20], iconAnchor: [20, 10] }), 
             interactive: false 
           }).addTo(edgeLabelsLayer);
         }
@@ -213,7 +225,7 @@
   function highlightParcel(features) {
     if (highlightLayer) map.removeLayer(highlightLayer);
     highlightLayer = L.geoJSON({type: "FeatureCollection", features: features}, {
-      style: { color: "#ff0000", weight: 4.5, fillColor: "#3498db", fillOpacity: 0.2 }
+      style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 }
     }).addTo(map);
   }
 
@@ -234,36 +246,30 @@
   }
 
   function locateUser() {
-    if (!navigator.geolocation) return alert("Trình duyệt không hỗ trợ định vị!");
+    if (!navigator.geolocation) return alert("Thiết bị không hỗ trợ GPS!");
     document.getElementById('loading-status').style.display = 'block';
-    map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true, timeout: 10000 });
+    map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true, timeout: 15000 });
   }
 
   map.on('locationfound', function(e) {
     document.getElementById('loading-status').style.display = 'none';
     if (userMarker) map.removeLayer(userMarker);
     userMarker = L.layerGroup([
-      L.circle(e.latlng, { radius: e.accuracy / 2, color: '#3498db', fillOpacity: 0.1 }),
-      L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#3498db', fillOpacity: 1, weight: 3, className: 'gps-fixed' })
+      L.circle(e.latlng, { radius: e.accuracy / 2, color: '#0d6efd', fillOpacity: 0.1 }),
+      L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3, className: 'gps-fixed' })
     ]).addTo(map);
   });
 
   map.on('locationerror', function(e) {
-    if (e.code === 3) {
-        document.getElementById('loading-status').innerText = "🌐 Đang thử định vị bằng mạng...";
-        map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: false, timeout: 5000 });
-    } else {
-        document.getElementById('loading-status').style.display = 'none';
-        alert("Lỗi: " + e.message + "\nVui lòng dùng HTTPS.");
-    }
+    document.getElementById('loading-status').style.display = 'none';
+    if (e.code === 1) alert("Lỗi: Quyền vị trí bị từ chối. Hãy bật trong cài đặt trình duyệt!");
+    else map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: false, timeout: 5000 });
   });
 
   function clearSearch() {
     document.getElementById('soto').value = ''; document.getElementById('sothua').value = ''; document.getElementById('tenchu').value = '';
-    currentSelectedFeature = null;
-    if (highlightLayer) map.removeLayer(highlightLayer);
-    edgeLabelsLayer.clearLayers();
-    document.getElementById('info-bar').style.display = 'none';
+    currentSelectedFeature = null; if (highlightLayer) map.removeLayer(highlightLayer);
+    edgeLabelsLayer.clearLayers(); document.getElementById('info-bar').style.display = 'none';
   }
 </script>
 </body>

@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Tài Đỗ_Quản lý Thửa đất_2025</title>
+  <title>Tài Đỗ_Quản lý Thửa đất & Quy hoạch_2025</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,12 +14,12 @@
       --text-main: #343a40;
       --accent-orange: #fd7e14;
       --accent-blue: #0d6efd;
+      --accent-green: #198754;
     }
 
     body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg-light); overflow: hidden; color: var(--text-main); }
     #map { height: 100vh; width: 100%; z-index: 1; background: #eee; }
     
-    /* --- GIAO DIỆN TRẮNG HIỆN ĐẠI --- */
     #top-panel {
       position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
       background: var(--primary-white); padding: 12px 15px;
@@ -33,16 +33,20 @@
     input[type="number"], input[type="text"], input[type="file"] { 
       padding: 8px 12px; border: 1px solid var(--border-color); 
       border-radius: 6px; font-size: 13px; outline: none;
-      transition: border-color 0.2s;
     }
-    input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 2px rgba(13,110,253,0.1); }
     
-    #soto, #sothua { width: 50px; }
-    #tenchu { width: 120px; }
-    #file-input { max-width: 130px; background: #f1f3f5; cursor: pointer; }
+    .file-box { display: flex; flex-direction: column; gap: 2px; }
+    .file-box label { font-size: 10px; font-weight: bold; color: #666; }
 
-    .checkbox-group { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .checkbox-group input { width: 17px; height: 17px; cursor: pointer; }
+    #soto, #sothua { width: 50px; }
+    #tenchu { width: 100px; }
+
+    .layer-controls {
+      display: flex; align-items: center; gap: 10px; 
+      padding: 0 10px; border-left: 1px solid #ddd;
+    }
+
+    .checkbox-group { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
 
     button {
       padding: 9px 14px; border: none; border-radius: 6px; 
@@ -50,12 +54,9 @@
       display: flex; align-items: center; gap: 5px; transition: 0.3s;
     }
     .btn-search { background: var(--accent-orange); color: white; }
-    .btn-search:hover { background: #e86d05; }
-    .btn-clear { background: #e9ecef; color: #495057; }
-    .btn-clear:hover { background: #dee2e6; }
     .btn-locate { background: var(--accent-blue); color: white; }
-    .btn-locate:hover { background: #0b5ed7; }
-    .btn-direction { background: #198754; color: white; }
+    .btn-clear { background: #e9ecef; color: #495057; }
+    .btn-direction { background: var(--accent-green); color: white; }
 
     #info-bar {
       position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
@@ -66,54 +67,53 @@
 
     .info-container { display: flex; gap: 25px; align-items: center; min-width: max-content; }
     .info-item { display: flex; flex-direction: column; }
-    .info-label { font-size: 11px; color: #6c757d; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
-    .info-value { font-size: 15px; color: var(--text-main); font-weight: 700; white-space: nowrap; }
+    .info-label { font-size: 11px; color: #6c757d; font-weight: 700; text-transform: uppercase; }
+    .info-value { font-size: 15px; color: var(--text-main); font-weight: 700; }
 
-    /* NHÃN CẠNH XOAY */
-    .edge-label-container { background: transparent; border: none; }
     .edge-label-inner {
       background: var(--primary-white); border: 1.5px solid #dc3545; 
       border-radius: 4px; padding: 2px 5px; font-size: 11px; font-weight: 800; 
-      color: #dc3545; white-space: nowrap; box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-
-    .gps-fixed { animation: pulse 2s infinite; border: 2px solid white; border-radius: 50%; }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(13, 110, 253, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+      color: #dc3545; white-space: nowrap;
     }
 
     #loading-status {
-      position: fixed; top: 85px; left: 50%; transform: translateX(-50%);
+      position: fixed; top: 120px; left: 50%; transform: translateX(-50%);
       background: var(--text-main); color: white; padding: 10px 20px;
       border-radius: 30px; font-size: 13px; display: none; z-index: 2000;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
 
-    @media (max-width: 600px) {
-      #top-panel { top: 5px; left: 5px; right: 5px; padding: 8px; gap: 6px; }
-      #tenchu { width: 85px; }
-      button { padding: 8px 10px; font-size: 11px; }
-      #file-input { max-width: 100px; }
+    @media (max-width: 768px) {
+      #top-panel { gap: 8px; }
+      .layer-controls { border-left: none; border-top: 1px solid #ddd; padding-top: 5px; width: 100%; }
     }
   </style>
 </head>
 <body>
 
-<div id="loading-status">🛰️ Đang đồng bộ vị trí vệ tinh...</div>
+<div id="loading-status">🛰️ Đang xử lý dữ liệu...</div>
 
 <div id="top-panel">
-  <input type="file" id="file-input" accept=".geojson">
+  <div class="file-box">
+    <label>ĐỊA CHÍNH</label>
+    <input type="file" id="file-dc" accept=".geojson">
+  </div>
+  <div class="file-box">
+    <label>QUY HOẠCH</label>
+    <input type="file" id="file-qh" accept=".geojson">
+  </div>
+
   <div class="input-group">
     <input type="number" id="soto" placeholder="Tờ">
     <input type="number" id="sothua" placeholder="Thửa">
     <input type="text" id="tenchu" placeholder="Tên chủ">
   </div>
-  <label class="checkbox-group">
-    <input type="checkbox" id="chk-edges" checked onchange="toggleEdges()"> Hiện Cạnh
-  </label>
+
+  <div class="layer-controls">
+    <label class="checkbox-group"><input type="checkbox" id="chk-dc" checked onchange="toggleLayer('dc')"> Hiện ĐC</label>
+    <label class="checkbox-group"><input type="checkbox" id="chk-qh" checked onchange="toggleLayer('qh')"> Hiện QH</label>
+    <label class="checkbox-group"><input type="checkbox" id="chk-edges" checked onchange="updateEdges()"> Hiện Cạnh</label>
+  </div>
+
   <button class="btn-search" onclick="searchParcel()">🔍 TÌM</button>
   <button class="btn-clear" onclick="clearSearch()">✖</button>
   <button class="btn-locate" onclick="locateUser()">📍 VỊ TRÍ</button>
@@ -136,7 +136,8 @@
     maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3']
   }).addTo(map);
 
-  let dataLayer = null, highlightLayer = null, geojsonData = null, userMarker = null, currentSelectedFeature = null;
+  let dcLayer = null, qhLayer = null, highlightLayer = null;
+  let dcData = null, currentSelectedFeature = null;
   let edgeLabelsLayer = L.layerGroup().addTo(map);
 
   const fieldMapping = { 
@@ -144,89 +145,131 @@
     "KHLOAIDAT": "Loại đất", "TENCHU": "Tên chủ" 
   };
 
-  document.getElementById('file-input').onchange = function(e) {
-    const reader = new FileReader();
-    reader.onload = function() {
-      try {
-        geojsonData = JSON.parse(reader.result);
-        renderBoundaries(geojsonData);
-      } catch(err) { alert("Lỗi đọc file GeoJSON!"); }
-    };
-    reader.readAsText(e.target.files[0]);
+  // Xử lý nạp file Địa Chính
+  document.getElementById('file-dc').onchange = function(e) {
+    loadFile(e.target.files[0], 'dc');
   };
 
-  function renderBoundaries(data) {
-    if (dataLayer) map.removeLayer(dataLayer);
-    dataLayer = L.geoJSON(data, {
+  // Xử lý nạp file Quy Hoạch
+  document.getElementById('file-qh').onchange = function(e) {
+    loadFile(e.target.files[0], 'qh');
+  };
+
+  function loadFile(file, type) {
+    if (!file) return;
+    const reader = new FileReader();
+    document.getElementById('loading-status').style.display = 'block';
+    reader.onload = function() {
+      try {
+        const json = JSON.parse(reader.result);
+        if (type === 'dc') {
+          dcData = json;
+          renderDC(json);
+        } else {
+          renderQH(json);
+        }
+      } catch(err) { alert("Lỗi đọc file GeoJSON!"); }
+      document.getElementById('loading-status').style.display = 'none';
+    };
+    reader.readAsText(file);
+  }
+
+  function renderDC(data) {
+    if (dcLayer) map.removeLayer(dcLayer);
+    dcLayer = L.geoJSON(data, {
       style: { color: "#ffeb3b", weight: 1.5, fillOpacity: 0.1 },
       onEachFeature: function(feature, layer) {
         layer.on('click', function(e) { processSelection(feature, layer); L.DomEvent.stopPropagation(e); });
       }
     }).addTo(map);
-    map.fitBounds(dataLayer.getBounds());
+    map.fitBounds(dcLayer.getBounds());
+    dcLayer.bringToFront(); // Luôn nằm trên
+  }
+
+  function renderQH(data) {
+    if (qhLayer) map.removeLayer(qhLayer);
+    qhLayer = L.geoJSON(data, {
+      style: function(feature) {
+        return {
+          color: "#333",
+          weight: 0.5,
+          fillColor: feature.properties.fill || "#000",
+          fillOpacity: feature.properties["fill-opacity"] || 0.5
+        };
+      },
+      interactive: false // Để không cản trở click vào địa chính
+    }).addTo(map);
+    if (dcLayer) dcLayer.bringToFront();
+  }
+
+  function toggleLayer(type) {
+    if (type === 'dc' && dcLayer) {
+      document.getElementById('chk-dc').checked ? map.addLayer(dcLayer) : map.removeLayer(dcLayer);
+    }
+    if (type === 'qh' && qhLayer) {
+      document.getElementById('chk-qh').checked ? map.addLayer(qhLayer) : map.removeLayer(qhLayer);
+    }
   }
 
   function searchParcel() {
     const s = document.getElementById('soto').value.trim();
     const t = document.getElementById('sothua').value.trim();
     const n = document.getElementById('tenchu').value.trim().toLowerCase();
-    if (!geojsonData) return alert("Vui lòng nạp file GeoJSON!");
+    if (!dcLayer) return alert("Vui lòng nạp file Địa chính!");
 
-    let foundFeature = null, foundLayer = null;
-    dataLayer.eachLayer(function(layer) {
+    let foundLayer = null;
+    dcLayer.eachLayer(function(layer) {
       const p = layer.feature.properties;
       const matchPT = (s && t) ? (String(p.SHBANDO) == s && String(p.SHTHUA) == t) : false;
       const matchN = n ? (String(p.TENCHU || "").toLowerCase().includes(n)) : false;
-      if (matchPT || matchN) { foundFeature = layer.feature; foundLayer = layer; }
+      if (matchPT || matchN) { foundLayer = layer; }
     });
 
-    if (foundFeature) processSelection(foundFeature, foundLayer);
-    else alert("Không tìm thấy thửa đất yêu cầu!");
+    if (foundLayer) processSelection(foundLayer.feature, foundLayer);
+    else alert("Không tìm thấy thửa đất!");
   }
 
   function processSelection(feature, layer) {
     currentSelectedFeature = feature;
-    highlightParcel([feature]);
+    if (highlightLayer) map.removeLayer(highlightLayer);
+    highlightLayer = L.geoJSON(feature, {
+      style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 }
+    }).addTo(map);
+
     const center = layer.getBounds().getCenter();
     showInfoHorizontal(feature.properties, center.lat, center.lng);
-    toggleEdges();
+    updateEdges();
     map.fitBounds(layer.getBounds(), { padding: [100, 100] });
   }
 
-  function toggleEdges() {
-    if (!currentSelectedFeature) return;
+  function updateEdges() {
     edgeLabelsLayer.clearLayers();
-    if (document.getElementById('chk-edges').checked) {
-      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? 
-                   currentSelectedFeature.geometry.coordinates[0] : 
-                   currentSelectedFeature.geometry.coordinates[0][0];
-      
-      for (let i = 0; i < coords.length - 1; i++) {
-        let p1 = L.latLng(coords[i][1], coords[i][0]);
-        let p2 = L.latLng(coords[i+1][1], coords[i+1][0]);
-        let dist = p1.distanceTo(p2);
-        if (dist > 0.5) {
-          let mid = [(p1.lat + p2.lat)/2, (p1.lng + p2.lng)/2];
-          let angle = Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
-          let rotation = -angle;
-          if (rotation > 90) rotation -= 180;
-          if (rotation < -90) rotation += 180;
+    if (!currentSelectedFeature || !document.getElementById('chk-edges').checked) return;
 
-          let labelHtml = `<div class="edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(1)}m</div>`;
-          L.marker(mid, { 
-            icon: L.divIcon({ className: 'edge-label-container', html: labelHtml, iconSize: [40, 20], iconAnchor: [20, 10] }), 
-            interactive: false 
-          }).addTo(edgeLabelsLayer);
-        }
+    let coords = (currentSelectedFeature.geometry.type === "Polygon") ? 
+                 currentSelectedFeature.geometry.coordinates[0] : 
+                 currentSelectedFeature.geometry.coordinates[0][0];
+    
+    for (let i = 0; i < coords.length - 1; i++) {
+      let p1 = L.latLng(coords[i][1], coords[i][0]);
+      let p2 = L.latLng(coords[i+1][1], coords[i+1][0]);
+      let dist = p1.distanceTo(p2);
+      if (dist > 0.3) {
+        let mid = [(p1.lat + p2.lat)/2, (p1.lng + p2.lng)/2];
+        let angle = Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
+        let rotation = -angle;
+        if (rotation > 90) rotation -= 180;
+        if (rotation < -90) rotation += 180;
+
+        L.marker(mid, { 
+          icon: L.divIcon({ 
+            className: 'edge-label-container', 
+            html: `<div class="edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(1)}m</div>`,
+            iconSize: [40, 20] 
+          }), interactive: false 
+        }).addTo(edgeLabelsLayer);
       }
     }
-  }
-
-  function highlightParcel(features) {
-    if (highlightLayer) map.removeLayer(highlightLayer);
-    highlightLayer = L.geoJSON({type: "FeatureCollection", features: features}, {
-      style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 }
-    }).addTo(map);
   }
 
   function showInfoHorizontal(props, lat, lng) {
@@ -238,7 +281,6 @@
         let val = props[key];
         if (key === "SHBANDO" || key === "SHTHUA") val = Math.floor(Number(val));
         else if (key === "DIENTICH") val = Number(val).toFixed(1);
-        else if (typeof val === 'number') val = Number.isInteger(val) ? val : val.toFixed(1);
         html += `<div class="info-item"><span class="info-label">${label}</span><span class="info-value">${val || "-"}</span></div>`;
     });
     content.innerHTML = html;
@@ -246,30 +288,22 @@
   }
 
   function locateUser() {
-    if (!navigator.geolocation) return alert("Thiết bị không hỗ trợ GPS!");
+    if (!navigator.geolocation) return alert("Không hỗ trợ GPS!");
     document.getElementById('loading-status').style.display = 'block';
-    map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true, timeout: 15000 });
+    map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true });
   }
 
   map.on('locationfound', function(e) {
     document.getElementById('loading-status').style.display = 'none';
-    if (userMarker) map.removeLayer(userMarker);
-    userMarker = L.layerGroup([
-      L.circle(e.latlng, { radius: e.accuracy / 2, color: '#0d6efd', fillOpacity: 0.1 }),
-      L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3, className: 'gps-fixed' })
-    ]).addTo(map);
-  });
-
-  map.on('locationerror', function(e) {
-    document.getElementById('loading-status').style.display = 'none';
-    if (e.code === 1) alert("Lỗi: Quyền vị trí bị từ chối. Hãy bật trong cài đặt trình duyệt!");
-    else map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: false, timeout: 5000 });
+    L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3 }).addTo(map);
   });
 
   function clearSearch() {
-    document.getElementById('soto').value = ''; document.getElementById('sothua').value = ''; document.getElementById('tenchu').value = '';
-    currentSelectedFeature = null; if (highlightLayer) map.removeLayer(highlightLayer);
-    edgeLabelsLayer.clearLayers(); document.getElementById('info-bar').style.display = 'none';
+    ['soto', 'sothua', 'tenchu'].forEach(id => document.getElementById(id).value = '');
+    if (highlightLayer) map.removeLayer(highlightLayer);
+    edgeLabelsLayer.clearLayers();
+    document.getElementById('info-bar').style.display = 'none';
+    currentSelectedFeature = null;
   }
 </script>
 </body>

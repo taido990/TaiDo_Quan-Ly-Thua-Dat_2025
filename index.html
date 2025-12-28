@@ -199,6 +199,10 @@
       },
       interactive: false // Để không cản trở click vào địa chính
     }).addTo(map);
+	// --- DÒNG CODE MỚI THÊM VÀO ---
+    if (qhLayer.getBounds().isValid()) {
+        map.fitBounds(qhLayer.getBounds());
+    }
     if (dcLayer) dcLayer.bringToFront();
   }
 

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Tài Đỗ_Map_2025</title>
+  <title>Tài Đỗ_Map_2025_7P_Full</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -59,7 +59,8 @@
 
     input[type="number"],
     input[type="text"],
-    input[type="file"] {
+    input[type="file"],
+    select {
       padding: 8px 12px;
       border: 1px solid var(--border-color);
       border-radius: 6px;
@@ -141,11 +142,6 @@
     .btn-export {
       background: #6f42c1;
       color: white;
-    }
-
-    #direction-btn-container {
-      display: flex;
-      gap: 10px;
     }
 
     #info-bar {
@@ -242,9 +238,8 @@
     </div>
 
     <div class="file-box">
-      <label>TỈNH/TP</label>
-      <select id="sel-province"
-        style="padding: 7px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px;"></select>
+      <label>TỈNH/TP (KTT)</label>
+      <select id="sel-province"></select>
     </div>
 
     <div class="input-group">
@@ -270,14 +265,14 @@
   <div id="info-bar">
     <div class="info-container">
       <div id="info-content" style="display: flex; gap: 20px;"></div>
-      <div id="direction-btn-container"></div>
+      <div id="direction-btn-container" style="display: flex; gap: 10px;"></div>
     </div>
   </div>
 
   <div id="map"></div>
 
   <script>
-    const map = L.map('map', { maxZoom: 22, zoomControl: false }).setView([10.8, 106.7], 15);
+    const map = L.map('map', { maxZoom: 22, zoomControl: false }).setView([12.667, 108.038], 15);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
@@ -287,21 +282,59 @@
     let dcLayer = null, qhLayer = null, highlightLayer = null;
     let dcData = null, currentSelectedFeature = null;
     let edgeLabelsLayer = L.layerGroup().addTo(map);
+    let currentKTT = 108.5;
 
     const fieldMapping = {
       "SHBANDO": "Tờ", "SHTHUA": "Thửa", "DIENTICH": "Diện tích (m²)",
       "KHLOAIDAT": "Loại đất", "TENCHU": "Tên chủ"
     };
 
-    // Xử lý nạp file Địa Chính
-    document.getElementById('file-dc').onchange = function (e) {
-      loadFile(e.target.files[0], 'dc');
-    };
+    // 1. DANH SÁCH 63 TỈNH THÀNH (KTT VN2000)
+    const provinces = [
+      { name: "An Giang", ktt: 104.75 }, { name: "Bà Rịa - Vũng Tàu", ktt: 107.75 }, { name: "Bạc Liêu", ktt: 105.00 },
+      { name: "Bắc Kạn", ktt: 106.50 }, { name: "Bắc Giang", ktt: 107.00 }, { name: "Bắc Ninh", ktt: 105.50 },
+      { name: "Bến Tre", ktt: 105.75 }, { name: "Bình Dương", ktt: 105.75 }, { name: "Bình Định", ktt: 108.25 },
+      { name: "Bình Phước", ktt: 106.25 }, { name: "Bình Thuận", ktt: 108.50 }, { name: "Cà Mau", ktt: 104.50 },
+      { name: "Cao Bằng", ktt: 105.75 }, { name: "Cần Thơ", ktt: 105.00 }, { name: "Đà Nẵng", ktt: 107.75 },
+      { name: "Đắk Lắk", ktt: 108.50 }, { name: "Đắk Nông", ktt: 108.50 }, { name: "Điện Biên", ktt: 103.00 },
+      { name: "Đồng Nai", ktt: 107.75 }, { name: "Đồng Tháp", ktt: 105.00 }, { name: "Gia Lai", ktt: 108.50 },
+      { name: "Hà Giang", ktt: 105.50 }, { name: "Hà Nam", ktt: 105.00 }, { name: "Hà Nội", ktt: 105.00 },
+      { name: "Hà Tĩnh", ktt: 105.50 }, { name: "Hải Dương", ktt: 105.50 }, { name: "Hải Phòng", ktt: 105.75 },
+      { name: "Hậu Giang", ktt: 105.00 }, { name: "Hòa Bình", ktt: 106.00 }, { name: "TP. Hồ Chí Minh", ktt: 105.75 },
+      { name: "Hưng Yên", ktt: 105.50 }, { name: "Khánh Hòa", ktt: 108.25 }, { name: "Kiên Giang", ktt: 104.50 },
+      { name: "Kon Tum", ktt: 107.50 }, { name: "Lai Châu", ktt: 103.00 }, { name: "Lâm Đồng", ktt: 107.75 },
+      { name: "Lạng Sơn", ktt: 107.25 }, { name: "Lào Cai", ktt: 104.75 }, { name: "Long An", ktt: 105.75 },
+      { name: "Nam Định", ktt: 105.50 }, { name: "Nghệ An", ktt: 104.75 }, { name: "Ninh Bình", ktt: 105.00 },
+      { name: "Ninh Thuận", ktt: 108.25 }, { name: "Phú Thọ", ktt: 104.75 }, { name: "Phú Yên", ktt: 108.50 },
+      { name: "Quảng Bình", ktt: 106.00 }, { name: "Quảng Nam", ktt: 107.75 }, { name: "Quảng Ngãi", ktt: 108.00 },
+      { name: "Quảng Ninh", ktt: 107.75 }, { name: "Quảng Trị", ktt: 106.25 }, { name: "Sóc Trăng", ktt: 105.50 },
+      { name: "Sơn La", ktt: 104.00 }, { name: "Tây Ninh", ktt: 105.50 }, { name: "Thái Bình", ktt: 105.50 },
+      { name: "Thái Nguyên", ktt: 106.50 }, { name: "Thanh Hóa", ktt: 105.00 }, { name: "Thừa Thiên Huế", ktt: 107.00 },
+      { name: "Tiền Giang", ktt: 105.75 }, { name: "Trà Vinh", ktt: 105.50 }, { name: "Tuyên Quang", ktt: 106.00 },
+      { name: "Vĩnh Long", ktt: 105.50 }, { name: "Vĩnh Phúc", ktt: 105.00 }, { name: "Yên Bái", ktt: 104.75 }
+    ].sort((a, b) => a.name.localeCompare(b.name));
 
-    // Xử lý nạp file Quy Hoạch
-    document.getElementById('file-qh').onchange = function (e) {
-      loadFile(e.target.files[0], 'qh');
-    };
+    // Khởi tạo Select Province
+    const selProv = document.getElementById('sel-province');
+    provinces.forEach(p => {
+      let opt = new Option(`${p.name} (${p.ktt})`, p.ktt);
+      if (p.name === "Đắk Lắk") opt.selected = true;
+      selProv.add(opt);
+    });
+
+    selProv.onchange = function () { updateVN2000(parseFloat(this.value)); };
+
+    // 2. CẬP NHẬT HÀM VN2000 VỚI 7 THAM SỐ VÀ GRS80
+    function updateVN2000(ktt) {
+      currentKTT = ktt;
+      const def = `+proj=tmerc +lat_0=0 +lon_0=${ktt} +k=0.9999 +x_0=500000 +y_0=0 +ellps=GRS80 +towgs84=-191.90441429,-39.30318279,-111.45032835,0.00928836,-0.01975479,0.00427372,0.252906278 +units=m +no_defs`;
+      proj4.defs("VN2000_Current", def);
+    }
+    updateVN2000(currentKTT);
+
+    // Xử lý file
+    document.getElementById('file-dc').onchange = e => loadFile(e.target.files[0], 'dc');
+    document.getElementById('file-qh').onchange = e => loadFile(e.target.files[0], 'qh');
 
     function loadFile(file, type) {
       if (!file) return;
@@ -310,13 +343,8 @@
       reader.onload = function () {
         try {
           const json = JSON.parse(reader.result);
-          if (type === 'dc') {
-            dcData = json;
-            renderDC(json);
-          } else {
-            renderQH(json);
-          }
-        } catch (err) { alert("Lỗi đọc file GeoJSON!"); }
+          type === 'dc' ? (dcData = json, renderDC(json)) : renderQH(json);
+        } catch (err) { alert("Lỗi GeoJSON!"); }
         document.getElementById('loading-status').style.display = 'none';
       };
       reader.readAsText(file);
@@ -326,68 +354,29 @@
       if (dcLayer) map.removeLayer(dcLayer);
       dcLayer = L.geoJSON(data, {
         style: { color: "#ffeb3b", weight: 1.5, fillOpacity: 0.1 },
-        onEachFeature: function (feature, layer) {
-          layer.on('click', function (e) { processSelection(feature, layer); L.DomEvent.stopPropagation(e); });
-        }
+        onEachFeature: (f, l) => l.on('click', e => { processSelection(f, l); L.DomEvent.stopPropagation(e); })
       }).addTo(map);
       map.fitBounds(dcLayer.getBounds());
-      dcLayer.bringToFront(); // Luôn nằm trên
     }
 
     function renderQH(data) {
       if (qhLayer) map.removeLayer(qhLayer);
       qhLayer = L.geoJSON(data, {
-        style: function (feature) {
-          return {
-            color: "#333",
-            weight: 0.5,
-            fillColor: feature.properties.fill || "#000",
-            fillOpacity: feature.properties["fill-opacity"] || 0.5
-          };
-        },
-        interactive: false // Để không cản trở click vào địa chính
+        style: f => ({ color: "#333", weight: 0.5, fillColor: f.properties.fill || "#000", fillOpacity: f.properties["fill-opacity"] || 0.5 }),
+        interactive: false
       }).addTo(map);
-      // --- DÒNG CODE MỚI THÊM VÀO ---
-      if (qhLayer.getBounds().isValid()) {
-        map.fitBounds(qhLayer.getBounds());
-      }
-      if (dcLayer) dcLayer.bringToFront();
+      if (qhLayer.getBounds().isValid()) map.fitBounds(qhLayer.getBounds());
     }
 
     function toggleLayer(type) {
-      if (type === 'dc' && dcLayer) {
-        document.getElementById('chk-dc').checked ? map.addLayer(dcLayer) : map.removeLayer(dcLayer);
-      }
-      if (type === 'qh' && qhLayer) {
-        document.getElementById('chk-qh').checked ? map.addLayer(qhLayer) : map.removeLayer(qhLayer);
-      }
-    }
-
-    function searchParcel() {
-      const s = document.getElementById('soto').value.trim();
-      const t = document.getElementById('sothua').value.trim();
-      const n = document.getElementById('tenchu').value.trim().toLowerCase();
-      if (!dcLayer) return alert("Vui lòng nạp file Địa chính!");
-
-      let foundLayer = null;
-      dcLayer.eachLayer(function (layer) {
-        const p = layer.feature.properties;
-        const matchPT = (s && t) ? (String(p.SHBANDO) == s && String(p.SHTHUA) == t) : false;
-        const matchN = n ? (String(p.TENCHU || "").toLowerCase().includes(n)) : false;
-        if (matchPT || matchN) { foundLayer = layer; }
-      });
-
-      if (foundLayer) processSelection(foundLayer.feature, foundLayer);
-      else alert("Không tìm thấy thửa đất!");
+      if (type === 'dc' && dcLayer) document.getElementById('chk-dc').checked ? map.addLayer(dcLayer) : map.removeLayer(dcLayer);
+      if (type === 'qh' && qhLayer) document.getElementById('chk-qh').checked ? map.addLayer(qhLayer) : map.removeLayer(qhLayer);
     }
 
     function processSelection(feature, layer) {
       currentSelectedFeature = feature;
       if (highlightLayer) map.removeLayer(highlightLayer);
-      highlightLayer = L.geoJSON(feature, {
-        style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 }
-      }).addTo(map);
-
+      highlightLayer = L.geoJSON(feature, { style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 } }).addTo(map);
       const center = layer.getBounds().getCenter();
       showInfoHorizontal(feature.properties, center.lat, center.lng);
       updateEdges();
@@ -397,28 +386,16 @@
     function updateEdges() {
       edgeLabelsLayer.clearLayers();
       if (!currentSelectedFeature || !document.getElementById('chk-edges').checked) return;
-
-      let coords = (currentSelectedFeature.geometry.type === "Polygon") ?
-        currentSelectedFeature.geometry.coordinates[0] :
-        currentSelectedFeature.geometry.coordinates[0][0];
-
+      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
       for (let i = 0; i < coords.length - 1; i++) {
-        let p1 = L.latLng(coords[i][1], coords[i][0]);
-        let p2 = L.latLng(coords[i + 1][1], coords[i + 1][0]);
+        let p1 = L.latLng(coords[i][1], coords[i][0]), p2 = L.latLng(coords[i+1][1], coords[i+1][0]);
         let dist = p1.distanceTo(p2);
         if (dist > 0.3) {
           let mid = [(p1.lat + p2.lat) / 2, (p1.lng + p2.lng) / 2];
-          let angle = Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
-          let rotation = -angle;
-          if (rotation > 90) rotation -= 180;
-          if (rotation < -90) rotation += 180;
-
+          let rotation = -Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
+          if (rotation > 90) rotation -= 180; if (rotation < -90) rotation += 180;
           L.marker(mid, {
-            icon: L.divIcon({
-              className: 'edge-label-container',
-              html: `<div class="edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(1)}m</div>`,
-              iconSize: [40, 20]
-            }), interactive: false
+            icon: L.divIcon({ className: 'edge-label-container', html: `<div class="edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(2)}m</div>`, iconSize: [40, 20] }), interactive: false
           }).addTo(edgeLabelsLayer);
         }
       }
@@ -436,195 +413,60 @@
         html += `<div class="info-item"><span class="info-label">${label}</span><span class="info-value">${val || "-"}</span></div>`;
       });
       content.innerHTML = html;
-      btnContainer.innerHTML = `
-        <button class="btn-direction" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">🚗 CHỈ ĐƯỜNG</button>
-        <button class="btn-export" onclick="exportCoords()">📥 XUẤT TỌA ĐỘ</button>
-      `;
+      btnContainer.innerHTML = `<button class="btn-direction" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}', '_blank')">🚗 CHỈ ĐƯỜNG</button>
+                                <button class="btn-export" onclick="exportCoords()">📥 XUẤT TỌA ĐỘ</button>`;
     }
 
-    function locateUser() {
-      if (!navigator.geolocation) return alert("Không hỗ trợ GPS!");
-      document.getElementById('loading-status').style.display = 'block';
-      map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true });
-    }
-
-    map.on('locationfound', function (e) {
-      document.getElementById('loading-status').style.display = 'none';
-      L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3 }).addTo(map);
-    });
-
-    // Cấu hình VN2000 Mặc định (Đắk Lắk - 108.5)
-    // Sẽ được cập nhật khi chọn Tỉnh
-    let currentKTT = 108.5;
-
-    // Danh sách 63 Tỉnh Thành và Kinh Tuyến Trục (KTT VN2000 - Múi 3 độ)
-    // Nguồn tham khảo: Thông tư 973/2001/TT-TCDC và dữ liệu trắc địa hiện hành
-    const provinces = [
-      { name: "An Giang", ktt: 104.75 }, { name: "Bà Rịa - Vũng Tàu", ktt: 107.75 },
-      { name: "Bạc Liêu", ktt: 105.00 }, { name: "Bắc Kạn", ktt: 106.50 },
-      { name: "Bắc Giang", ktt: 107.00 }, { name: "Bắc Ninh", ktt: 105.50 },
-      { name: "Bến Tre", ktt: 105.75 }, { name: "Bình Dương", ktt: 105.75 },
-      { name: "Bình Định", ktt: 108.25 }, { name: "Bình Phước", ktt: 106.25 },
-      { name: "Bình Thuận", ktt: 108.50 }, { name: "Cà Mau", ktt: 104.50 },
-      { name: "Cao Bằng", ktt: 105.75 }, { name: "Cần Thơ", ktt: 105.00 },
-      { name: "Đà Nẵng", ktt: 107.75 }, { name: "Đắk Lắk", ktt: 108.50 },
-      { name: "Đắk Nông", ktt: 108.50 }, { name: "Điện Biên", ktt: 103.00 },
-      { name: "Đồng Nai", ktt: 107.75 }, { name: "Đồng Tháp", ktt: 105.00 },
-      { name: "Gia Lai", ktt: 108.50 }, { name: "Hà Giang", ktt: 105.50 },
-      { name: "Hà Nam", ktt: 105.00 }, { name: "Hà Nội", ktt: 105.00 },
-      { name: "Hà Tĩnh", ktt: 105.50 }, { name: "Hải Dương", ktt: 105.50 },
-      { name: "Hải Phòng", ktt: 105.75 }, { name: "Hậu Giang", ktt: 105.00 },
-      { name: "Hòa Bình", ktt: 106.00 }, { name: "TP. Hồ Chí Minh", ktt: 105.75 },
-      { name: "Hưng Yên", ktt: 105.50 }, { name: "Khánh Hòa", ktt: 108.25 },
-      { name: "Kiên Giang", ktt: 104.50 }, { name: "Kon Tum", ktt: 107.50 },
-      { name: "Lai Châu", ktt: 103.00 }, { name: "Lâm Đồng", ktt: 107.75 },
-      { name: "Lạng Sơn", ktt: 107.25 }, { name: "Lào Cai", ktt: 104.75 },
-      { name: "Long An", ktt: 105.75 }, { name: "Nam Định", ktt: 105.50 },
-      { name: "Nghệ An", ktt: 104.75 }, { name: "Ninh Bình", ktt: 105.00 },
-      { name: "Ninh Thuận", ktt: 108.25 }, { name: "Phú Thọ", ktt: 104.75 },
-      { name: "Phú Yên", ktt: 108.50 }, { name: "Quảng Bình", ktt: 106.00 },
-      { name: "Quảng Nam", ktt: 107.75 }, { name: "Quảng Ngãi", ktt: 108.00 },
-      { name: "Quảng Ninh", ktt: 107.75 }, { name: "Quảng Trị", ktt: 106.25 },
-      { name: "Sóc Trăng", ktt: 105.50 }, { name: "Sơn La", ktt: 104.00 },
-      { name: "Tây Ninh", ktt: 105.50 }, { name: "Thái Bình", ktt: 105.50 },
-      { name: "Thái Nguyên", ktt: 106.50 }, { name: "Thanh Hóa", ktt: 105.00 },
-      { name: "Thừa Thiên Huế", ktt: 107.00 }, { name: "Tiền Giang", ktt: 105.75 },
-      { name: "Trà Vinh", ktt: 105.50 }, { name: "Tuyên Quang", ktt: 106.00 },
-      { name: "Vĩnh Long", ktt: 105.50 }, { name: "Vĩnh Phúc", ktt: 105.00 },
-      { name: "Yên Bái", ktt: 104.75 }
-    ];
-
-    // Sắp xếp theo tên cho dễ tìm
-    provinces.sort((a, b) => a.name.localeCompare(b.name));
-
-    // Khởi tạo Select Province
-    const selProv = document.getElementById('sel-province');
-    provinces.forEach(p => {
-      let opt = document.createElement('option');
-      opt.value = p.ktt;
-      opt.text = `${p.name} (${p.ktt})`;
-      if (p.name === "Đắk Lắk") opt.selected = true;
-      selProv.appendChild(opt);
-    });
-
-    selProv.onchange = function () {
-      updateVN2000(parseFloat(this.value));
-    };
-
-    function updateVN2000(ktt) {
-      currentKTT = ktt;
-      const def = `+proj=tmerc +lat_0=0 +lon_0=${ktt} +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 +towgs84=-191.90441429,-39.30318279,-111.45032835,0.00928836,-0.01975479,0.00427372,0.252906278 +units=m +no_defs`;
-      proj4.defs("VN2000_Current", def);
-    }
-
-    // Khởi tạo lần đầu
-    updateVN2000(currentKTT);
-
+    // 3. HIỂN THỊ TỌA ĐỘ KHI CLICK LÀM TRÒN 3 SỐ
     map.on('click', function (e) {
-      // Nếu đang chọn thửa đất thì không hiện popup tọa độ để tránh rối
-      // Tuy nhiên yêu cầu là "click vào bản đồ hiển thị toạ độ", nên ta cứ hiện.
-      // Nếu muốn ưu tiên chọn thửa, ta có thể check e.originalEvent.defaultPrevented hoặc logic khác.
-      // Ở đây ta cứ hiện popup.
-
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
-
-      // Convert WGS84 (EPSG:4326) -> VN2000
-      const vn2000 = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [lng, lat]);
-
-      L.popup()
-        .setLatLng(e.latlng)
-        .setContent(`
+      const vn2000 = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [e.latlng.lng, e.latlng.lat]);
+      L.popup().setLatLng(e.latlng).setContent(`
         <div style="text-align:center; font-size:13px;">
           <strong style="color:#0d6efd">📍 TỌA ĐỘ VỊ TRÍ</strong><br>
           <div style="margin-top:5px; text-align:left;">
-            <b>WGS84:</b> ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
-            <b>VN2000 (KTT ${currentKTT}):</b> X: ${vn2000[1].toFixed(2)} | Y: ${vn2000[0].toFixed(2)}
+            <b>WGS84:</b> ${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}<br>
+            <b>VN2000 (KTT ${currentKTT}):</b><br>X: ${vn2000[1].toFixed(3)} | Y: ${vn2000[0].toFixed(3)}
           </div>
         </div>
-      `)
-        .openOn(map);
+      `).openOn(map);
     });
 
+    // 4. XUẤT TỌA ĐỘ LÀM TRÒN 3 SỐ THẬP PHÂN
     function exportCoords() {
-      if (!currentSelectedFeature) return alert("Chưa chọn thửa đất!");
-
-      // Lấy tọa độ
-      let coords = (currentSelectedFeature.geometry.type === "Polygon") ?
-        currentSelectedFeature.geometry.coordinates[0] :
-        currentSelectedFeature.geometry.coordinates[0][0];
-
-      // GeoJSON thường lặp lại điểm đầu và cuối, ta bỏ điểm cuối để xử lý
-      let pts = coords.slice(0, coords.length - 1);
-
-      // Chuyển sang VN2000 Current
-      // Proj4 trả về [Easting, Northing] (tức [Y, X] theo quy ước user)
-      // User yêu cầu: X (7 số - Northing), Y (6 số - Easting)
+      if (!currentSelectedFeature) return;
+      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
+      let pts = coords.slice(0, -1).reverse(); // Đảo chiều để xuất CW (chiều kim đồng hồ)
+      
       let vnPts = pts.map(p => {
         let xy = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [p[0], p[1]]);
-        return {
-          x_user: xy[1], // Northing (7 số)
-          y_user: xy[0], // Easting (6 số)
-          z: 0
-        };
+        return { x: xy[1], y: xy[0] };
       });
 
-      // 1. Xác định chiều (Signed Area)
-      // Công thức: 0.5 * sum((x2 - x1) * (y2 + y1))
-      // Nếu kết quả > 0: Clockwise (nếu trục Y hướng lên như toán học/VN2000) (Lưu ý: trên màn hình máy tính Y hướng xuống thì ngược lại, nhưng đây là tọa độ thực địa Y hướng lên)
-      let area = 0;
-      for (let i = 0; i < vnPts.length; i++) {
-        let j = (i + 1) % vnPts.length;
-        area += (vnPts[j].x_user - vnPts[i].x_user) * (vnPts[j].y_user + vnPts[i].y_user);
-      }
-      // Nếu area < 0 => Counter Clockwise => Cần đảo ngược lại để thành Clockwise
-      // (Thông thường tính area theo (x*y) shoelace, nhưng công thức trên cũng tương đương chiều)
-      // Shoelace: sum(x_i * y_i+1 - x_i+1 * y_i).
-      // Let's use simple logic: GeoJSON outer ring is CCW. We want CW. So normally just reverse.
-      // However, let's verify area sign.
-
-      // Kiểm tra chiều kim đồng hồ bằng Shoelace standard cho chắc
-      let sum = 0;
-      for (let i = 0; i < vnPts.length; i++) {
-        let j = (i + 1) % vnPts.length;
-        sum += (vnPts[i].y_user * vnPts[j].x_user) - (vnPts[j].y_user * vnPts[i].x_user); // (x*y_next - x_next*y) logic with x=E, y=N
-      }
-      // Với hệ tọa độ Descartes (N lên, E phải):
-      // CW nếu Sum < 0. CCW nếu Sum > 0.
-      // (Lưu ý: công thức trên là cho E, N đóng vai trò x,y chuẩn).
-      // Ở đây x_user=N, y_user=E.
-      // Tốt nhất dùng logic GeoJSON: GeoJSON outer ring luôn là CCW.
-      // User muốn CW. Vậy ta luôn Reverse mảng gốc từ GeoJSON là xong.
-
-      vnPts.reverse();
-
-      // 2. Tìm điểm cực Bắc (High X_user)
-      // Nếu có nhiều điểm bằng nhau, lấy điểm đầu tiên gặp (hoặc logic nào đó, ở đây taking first max)
       let maxIdx = 0;
-      for (let i = 1; i < vnPts.length; i++) {
-        if (vnPts[i].x_user > vnPts[maxIdx].x_user) {
-          maxIdx = i;
-        }
-      }
+      vnPts.forEach((p, i) => { if (p.x > vnPts[maxIdx].x) maxIdx = i; });
+      let ordered = [...vnPts.slice(maxIdx), ...vnPts.slice(0, maxIdx)];
 
-      // 3. Xoay mảng để bắt đầu từ maxIdx
-      let orderedPts = [...vnPts.slice(maxIdx), ...vnPts.slice(0, maxIdx)];
-
-      // Tạo nội dung file
-      const p = currentSelectedFeature.properties;
-      let filename = `ToaDo_To_${p.SHBANDO}_Thua_${p.SHTHUA}.txt`;
       let content = "STT\tX(m)\tY(m)\tZ(m)\n";
-
-      orderedPts.forEach((pt, idx) => {
-        content += `${idx + 1}\t${pt.x_user.toFixed(3)}\t${pt.y_user.toFixed(3)}\t0.000\n`;
+      ordered.forEach((pt, idx) => {
+        content += `${idx + 1}\t${pt.x.toFixed(3)}\t${pt.y.toFixed(3)}\t0.000\n`;
       });
 
-      // Download
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const blob = new Blob([content], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = filename;
+      link.download = `ToaDo_To_${currentSelectedFeature.properties.SHBANDO}_Thua_${currentSelectedFeature.properties.SHTHUA}.txt`;
       link.click();
+    }
+
+    function searchParcel() {
+      const s = document.getElementById('soto').value.trim(), t = document.getElementById('sothua').value.trim(), n = document.getElementById('tenchu').value.trim().toLowerCase();
+      if (!dcLayer) return alert("Vui lòng nạp file Địa chính!");
+      let found = null;
+      dcLayer.eachLayer(l => {
+        const p = l.feature.properties;
+        if ((s && t && p.SHBANDO == s && p.SHTHUA == t) || (n && String(p.TENCHU || "").toLowerCase().includes(n))) found = l;
+      });
+      found ? processSelection(found.feature, found) : alert("Không tìm thấy!");
     }
 
     function clearSearch() {
@@ -632,8 +474,10 @@
       if (highlightLayer) map.removeLayer(highlightLayer);
       edgeLabelsLayer.clearLayers();
       document.getElementById('info-bar').style.display = 'none';
-      currentSelectedFeature = null;
     }
+
+    function locateUser() { map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true }); }
+    map.on('locationfound', e => L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3 }).addTo(map));
   </script>
 </body>
 

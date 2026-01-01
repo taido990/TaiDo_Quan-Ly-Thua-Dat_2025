@@ -68,6 +68,11 @@
       outline: none;
     }
 
+    #input-vn2000,
+    #input-wgs84 {
+      width: 140px;
+    }
+
     .file-box {
       display: flex;
       flex-direction: column;
@@ -248,6 +253,16 @@
       <input type="text" id="tenchu" placeholder="Tên chủ">
     </div>
 
+    <div class="input-group">
+      <input type="text" id="input-vn2000" placeholder="VN2000: Y, X (m)">
+      <button class="btn-search" onclick="searchVN2000()">🔍 VN</button>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="input-wgs84" placeholder="WGS84: Lat, Lng">
+      <button class="btn-search" onclick="searchWGS84()">🔍 WGS</button>
+    </div>
+
     <div class="layer-controls">
       <label class="checkbox-group"><input type="checkbox" id="chk-dc" checked onchange="toggleLayer('dc')"> Hiện
         ĐC</label>
@@ -388,7 +403,7 @@
       if (!currentSelectedFeature || !document.getElementById('chk-edges').checked) return;
       let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
       for (let i = 0; i < coords.length - 1; i++) {
-        let p1 = L.latLng(coords[i][1], coords[i][0]), p2 = L.latLng(coords[i+1][1], coords[i+1][0]);
+        let p1 = L.latLng(coords[i][1], coords[i][0]), p2 = L.latLng(coords[i + 1][1], coords[i + 1][0]);
         let dist = p1.distanceTo(p2);
         if (dist > 0.3) {
           let mid = [(p1.lat + p2.lat) / 2, (p1.lng + p2.lng) / 2];
@@ -436,7 +451,7 @@
       if (!currentSelectedFeature) return;
       let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
       let pts = coords.slice(0, -1).reverse(); // Đảo chiều để xuất CW (chiều kim đồng hồ)
-      
+
       let vnPts = pts.map(p => {
         let xy = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [p[0], p[1]]);
         return { x: xy[1], y: xy[0] };
@@ -470,10 +485,79 @@
     }
 
     function clearSearch() {
-      ['soto', 'sothua', 'tenchu'].forEach(id => document.getElementById(id).value = '');
+      ['soto', 'sothua', 'tenchu', 'input-vn2000', 'input-wgs84'].forEach(id => document.getElementById(id).value = '');
       if (highlightLayer) map.removeLayer(highlightLayer);
+      if (searchMarkerFn) map.removeLayer(searchMarkerFn);
       edgeLabelsLayer.clearLayers();
       document.getElementById('info-bar').style.display = 'none';
+      currentSelectedFeature = null;
+    }
+
+    let searchMarkerFn = null;
+    function createSearchMarker(latlng, popupContent) {
+      if (searchMarkerFn) map.removeLayer(searchMarkerFn);
+      searchMarkerFn = L.marker(latlng).addTo(map)
+        .bindPopup(popupContent).openPopup();
+      return searchMarkerFn;
+    }
+
+    function searchVN2000() {
+      const val = document.getElementById('input-vn2000').value.trim();
+      if (!val) return alert("Nhập tọa độ VN2000: Y X (hoặc Y, X)!");
+      // Chấp nhận cách nhau bởi dấu phẩy hoặc khoảng trắng
+      // Format đúng user yêu cầu: Y (6 số) trước, X (7 số) sau? Hay ngược lại? 
+      // Input placeholder: Y, X (m) -> Tức Easting, Northing
+      // Proj4 args: [Easting, Northing]
+
+      let parts = val.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n));
+      if (parts.length < 2) return alert("Cần nhập đủ X và Y!");
+
+      // Giả sử user nhập Y(Easting - 6 số), X(Northing - 7 số) hoặc ngược lại.
+      // Thông thường ở VN, X là Northing (7 số), Y là Easting (6 số).
+      // Nhưng textbox ghi "VN2000: Y, X" theo thói quen trắc địa hay toán học?
+      // Check độ lớn để đoán: X (Northing) ~ 1,000,000+, Y (Easting) ~ 400,000 - 600,000 (Múi 3)
+
+      let vX = parts[0];
+      let vY = parts[1];
+
+      // Auto swap if needed based on typical VN2000 ranges for Vietnam
+      // Northing (X) thường > 1,000,000 (khoảng 8-23 độ vĩ bắc => 1tr - 2.5tr mét)
+      // Easting (Y) thường 500,000 +/- 150km => 350,000 - 650,000 (ở dạng khử 500k thì khác, nhưng dạng chuẩn VN2000 thường là số dương lớn).
+      // Nếu user nhập đúng Y(Easting), X(Northing):
+      let e = vX;
+      let n = vY;
+
+      // Heuristic: Nếu số thứ 1 lớn hơn 800,000 và số thứ 2 nhỏ hơn 800,000 => Khả năng số 1 là Northing (X)
+      if (vX > 800000 && vY < 800000) { e = vY; n = vX; }
+      else if (vY > 800000 && vX < 800000) { e = vX; n = vY; }
+
+      // Transform
+      try {
+        const wgs = proj4(proj4.defs('VN2000_Current'), proj4.defs('EPSG:4326'), [e, n]);
+        if (isNaN(wgs[0]) || isNaN(wgs[1])) throw "NaN";
+
+        map.flyTo([wgs[1], wgs[0]], 18);
+        createSearchMarker([wgs[1], wgs[0]], `<div style='text-align:center'><b>VN2000 Found</b><br>X: ${n}<br>Y: ${e}</div>`);
+      } catch (err) {
+        alert("Lỗi chuyển đổi tọa độ! Kiểm tra lại số liệu.");
+      }
+    }
+
+    function searchWGS84() {
+      const val = document.getElementById('input-wgs84').value.trim();
+      if (!val) return alert("Nhập Lat, Lng!");
+      let parts = val.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n));
+      if (parts.length < 2) return alert("Cần nhập Latitude và Longitude!");
+
+      let lat = parts[0];
+      let lng = parts[1];
+
+      // Basic check for Vietnam bounds (Lat 8-24, Lng 102-110) just to warn, but allow map to fly anywhere
+      map.flyTo([lat, lng], 18);
+
+      // Convert ngược sang VN2000 để hiển thị info
+      const vn = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [lng, lat]);
+      createSearchMarker([lat, lng], `<div style='text-align:center'><b>WGS84 Location</b><br>Lat: ${lat}<br>Lng: ${lng}<br>VN2000: ${vn[1].toFixed(2)}, ${vn[0].toFixed(2)}</div>`);
     }
 
     function locateUser() { map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true }); }

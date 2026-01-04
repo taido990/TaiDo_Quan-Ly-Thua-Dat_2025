@@ -199,6 +199,21 @@
       white-space: nowrap;
     }
 
+    .vertex-label {
+      background: #0d6efd;
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      border: 1px solid white;
+    }
+
     #loading-status {
       position: fixed;
       top: 120px;
@@ -213,7 +228,48 @@
       z-index: 2000;
     }
 
+    #btn-locate-fixed {
+      position: absolute;
+      bottom: 320px;
+      right: 10px;
+      z-index: 1000;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      border: 2px solid white;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 8px;
+    }
+
+    .leaflet-right .leaflet-control-zoom {
+      margin-bottom: 160px !important;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .file-row {
+      display: flex;
+      gap: 10px;
+    }
+
     @media (max-width: 768px) {
+      .file-row {
+        width: 100%;
+      }
+
+      .file-box {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .file-box input {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
       #top-panel {
         gap: 8px;
       }
@@ -225,6 +281,94 @@
         width: 100%;
       }
     }
+
+    /* Custom Google Maps Style Layer Control */
+    .map-style-control {
+      position: absolute;
+      bottom: 80px;
+      /* Above scale/info */
+      left: 10px;
+      z-index: 1000;
+      font-family: Roboto, Arial, sans-serif;
+    }
+
+    .style-btn-trigger {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid white;
+      transition: 0.2s;
+      overflow: hidden;
+    }
+
+    .style-btn-trigger:hover {
+      border-color: #333;
+    }
+
+    .style-btn-trigger img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .style-panel {
+      position: absolute;
+      bottom: 0;
+      left: 70px;
+      background: white;
+      padding: 10px;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+      display: none;
+      /* Grid layout for map types */
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 300px;
+    }
+
+    .map-type-item {
+      cursor: pointer;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      text-align: center;
+    }
+
+    .map-type-item.active {
+      border-color: #333;
+    }
+
+    .map-type-item:hover {
+      border-color: #ccc;
+    }
+
+    .map-type-image {
+      width: 100%;
+      height: 60px;
+      background-color: #eee;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .map-type-label {
+      font-size: 11px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .show-panel {
+      display: grid !important;
+    }
   </style>
 </head>
 
@@ -232,19 +376,33 @@
 
   <div id="loading-status">🛰️ Đang xử lý dữ liệu...</div>
 
+  <button id="btn-locate-fixed" class="btn-locate" onclick="locateUser()" title="Vị trí của tôi">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+    </svg>
+  </button>
+
   <div id="top-panel">
-    <div class="file-box">
-      <label>ĐỊA CHÍNH</label>
-      <input type="file" id="file-dc" accept=".geojson">
-    </div>
-    <div class="file-box">
-      <label>QUY HOẠCH</label>
-      <input type="file" id="file-qh" accept=".geojson">
+    <div class="file-row">
+      <div class="file-box">
+        <label>ĐỊA CHÍNH</label>
+        <input type="file" id="file-dc" accept=".geojson">
+      </div>
+      <div class="file-box">
+        <label>QUY HOẠCH</label>
+        <input type="file" id="file-qh" accept=".geojson">
+      </div>
     </div>
 
-    <div class="file-box">
-      <label>TỈNH/TP (KTT)</label>
-      <select id="sel-province"></select>
+    <div class="input-group" style="align-items: flex-end;">
+      <div class="file-box">
+        <label>TỈNH/TP (KTT)</label>
+        <select id="sel-province"></select>
+      </div>
+      <button class="btn-search" onclick="searchParcel()">🔍 TÌM</button>
+      <button class="btn-clear" onclick="clearSearch()">✖</button>
     </div>
 
     <div class="input-group">
@@ -253,14 +411,18 @@
       <input type="text" id="tenchu" placeholder="Tên chủ">
     </div>
 
-    <div class="input-group">
-      <input type="text" id="input-vn2000" placeholder="VN2000: Y, X (m)">
-      <button class="btn-search" onclick="searchVN2000()">🔍 VN</button>
-    </div>
+    <button id="btn-toggle-coord" class="btn-search" onclick="toggleCoordPanel()"
+      style="padding: 9px 12px; min-width: 40px; background: var(--accent-green);">▶ Tìm tọa độ</button>
+    <div id="coord-panel" style="display:none; flex-direction:column; gap:5px;">
+      <div class="input-group">
+        <input type="text" id="input-vn2000" placeholder="VN2000: Y, X (m)">
+        <button class="btn-search" onclick="searchVN2000()">🔍 VN</button>
+      </div>
 
-    <div class="input-group">
-      <input type="text" id="input-wgs84" placeholder="WGS84: Lat, Lng">
-      <button class="btn-search" onclick="searchWGS84()">🔍 WGS</button>
+      <div class="input-group">
+        <input type="text" id="input-wgs84" placeholder="WGS84: Lat, Lng">
+        <button class="btn-search" onclick="searchWGS84()">🔍 WGS</button>
+      </div>
     </div>
 
     <div class="layer-controls">
@@ -271,10 +433,50 @@
       <label class="checkbox-group"><input type="checkbox" id="chk-edges" checked onchange="updateEdges()"> Hiện
         Cạnh</label>
     </div>
+  </div>
 
-    <button class="btn-search" onclick="searchParcel()">🔍 TÌM</button>
-    <button class="btn-clear" onclick="clearSearch()">✖</button>
-    <button class="btn-locate" onclick="locateUser()">📍 VỊ TRÍ</button>
+  <!-- Custom Layer Control UI -->
+  <div class="map-style-control" onmouseenter="showLayerPanel()" onmouseleave="hideLayerPanel()">
+    <div class="style-btn-trigger">
+      <!-- Icon placeholder, using a simple map icon or dynamic first layer -->
+      <img
+        src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBvbHlnb24gcG9pbnRzPSIxMiAyIDIgNyAxMiAxMiAyMiA3IDEyIDIiLz48cG9seWxpbmUgcG9pbnRzPSIyIDE3IDEyIDIyIDIyIDE3Ii8+PHBvbHlnb24gcG9pbnRzPSIyIDEyIDEyIDE3IDIyIDEyIi8+PC9zdmc+"
+        alt="Layers" style="padding: 10px;">
+    </div>
+    <div class="style-panel" id="style-panel">
+      <div class="map-type-item active" onclick="setBaseMap('Google Hybrid', this)">
+        <div class="map-type-image" style="background-image: url('https://mt1.google.com/vt/lyrs=y&x=0&y=0&z=0');">
+        </div>
+        <div class="map-type-label">Vệ tinh (Hybrid)</div>
+      </div>
+      <div class="map-type-item" onclick="setBaseMap('Google Satellite', this)">
+        <div class="map-type-image" style="background-image: url('https://mt1.google.com/vt/lyrs=s&x=0&y=0&z=0');">
+        </div>
+        <div class="map-type-label">Vệ tinh (Sạch)</div>
+      </div>
+      <div class="map-type-item" onclick="setBaseMap('Google Streets', this)">
+        <div class="map-type-image" style="background-image: url('https://mt1.google.com/vt/lyrs=m&x=0&y=0&z=0');">
+        </div>
+        <div class="map-type-label">Đường phố</div>
+      </div>
+      <div class="map-type-item" onclick="setBaseMap('Google Terrain', this)">
+        <div class="map-type-image" style="background-image: url('https://mt1.google.com/vt/lyrs=p&x=0&y=0&z=0');">
+        </div>
+        <div class="map-type-label">Địa hình</div>
+      </div>
+      <div class="map-type-item" onclick="setBaseMap('Esri World Imagery', this)">
+        <div class="map-type-image"
+          style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0');">
+        </div>
+        <div class="map-type-label">Esri Sat</div>
+      </div>
+      <div class="map-type-item" onclick="setBaseMap('Esri World Topo', this)">
+        <div class="map-type-image"
+          style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/0/0/0');">
+        </div>
+        <div class="map-type-label">Esri Topo</div>
+      </div>
+    </div>
   </div>
 
   <div id="info-bar">
@@ -290,13 +492,69 @@
     const map = L.map('map', { maxZoom: 22, zoomControl: false }).setView([12.667, 108.038], 15);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-      maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    }).addTo(map);
+    // --- CÁC LỚP NỀN (BASE MAPS) ---
+    const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: 'Google Hybrid'
+    });
+
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: 'Google Satellite'
+    });
+
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: 'Google Streets'
+    });
+
+    const googleTerrain = L.tileLayer('https://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+      maxZoom: 22, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: 'Google Terrain'
+    });
+
+    // Esri World Imagery
+    const esriWorld = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    // New Layers
+    const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    // Mặc định hiển thị Hybrid
+    googleHybrid.addTo(map);
+
+    const baseMaps = {
+      "Google Hybrid": googleHybrid,
+      "Google Satellite": googleSat,
+      "Google Streets": googleStreets,
+      "Google Terrain": googleTerrain,
+      "Esri World Imagery": esriWorld,
+      "Esri World Topo": esriTopo
+    };
+
+    // REMOVED DEFAULT CONTROL
+    // L.control.layers(baseMaps).addTo(map);
+
+    function setBaseMap(name, el) {
+      // Remove all base layers
+      Object.keys(baseMaps).forEach(k => map.removeLayer(baseMaps[k]));
+      // Add selected
+      if (baseMaps[name]) baseMaps[name].addTo(map);
+
+      // Update UI active state
+      document.querySelectorAll('.map-type-item').forEach(d => d.classList.remove('active'));
+      if (el) el.classList.add('active');
+    }
 
     let dcLayer = null, qhLayer = null, highlightLayer = null;
     let dcData = null, currentSelectedFeature = null;
     let edgeLabelsLayer = L.layerGroup().addTo(map);
+    let vertexLayer = L.layerGroup().addTo(map); // Layer chứa đỉnh thửa
     let currentKTT = 108.5;
 
     const fieldMapping = {
@@ -395,6 +653,11 @@
       const center = layer.getBounds().getCenter();
       showInfoHorizontal(feature.properties, center.lat, center.lng);
       updateEdges();
+
+      // Hiển thị đỉnh thửa
+      const orderedPts = getOrderedVertices(feature);
+      drawVertices(orderedPts);
+
       map.fitBounds(layer.getBounds(), { padding: [100, 100] });
     }
 
@@ -446,20 +709,53 @@
       `).openOn(map);
     });
 
-    // 4. XUẤT TỌA ĐỘ LÀM TRÒN 3 SỐ THẬP PHÂN
-    function exportCoords() {
-      if (!currentSelectedFeature) return;
-      let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
-      let pts = coords.slice(0, -1).reverse(); // Đảo chiều để xuất CW (chiều kim đồng hồ)
+    // Hàm xử lý logic lấy và sắp xếp đỉnh (Dùng chung cho hiển thị và xuất file)
+    function getOrderedVertices(feature) {
+      let coords = (feature.geometry.type === "Polygon") ? feature.geometry.coordinates[0] : feature.geometry.coordinates[0][0];
+      // Bỏ điểm cuối trùng điểm đầu và Đảo chiều (CCW -> CW)
+      let pts = coords.slice(0, -1).reverse();
 
+      // Chuyển sang VN2000
       let vnPts = pts.map(p => {
         let xy = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [p[0], p[1]]);
-        return { x: xy[1], y: xy[0] };
+        return {
+          x: xy[1], // Northing
+          y: xy[0], // Easting
+          lng: p[0],
+          lat: p[1]
+        };
       });
 
+      // Tìm điểm cực Bắc (Max X)
       let maxIdx = 0;
       vnPts.forEach((p, i) => { if (p.x > vnPts[maxIdx].x) maxIdx = i; });
-      let ordered = [...vnPts.slice(maxIdx), ...vnPts.slice(0, maxIdx)];
+
+      // Xoay mảng bắt đầu từ cực Bắc
+      return [...vnPts.slice(maxIdx), ...vnPts.slice(0, maxIdx)];
+    }
+
+    function drawVertices(orderedPts) {
+      vertexLayer.clearLayers();
+      orderedPts.forEach((pt, idx) => {
+        const stt = idx + 1;
+        // Marker số thứ tự
+        L.marker([pt.lat, pt.lng], {
+          icon: L.divIcon({
+            className: 'vertex-icon',
+            html: `<div class="vertex-label">${stt}</div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          }),
+          interactive: false
+        }).addTo(vertexLayer);
+      });
+    }
+
+    // 4. XUẤT TỌA ĐỘ
+    function exportCoords() {
+      if (!currentSelectedFeature) return;
+
+      const ordered = getOrderedVertices(currentSelectedFeature);
 
       let content = "STT\tX(m)\tY(m)\tZ(m)\n";
       ordered.forEach((pt, idx) => {
@@ -489,6 +785,7 @@
       if (highlightLayer) map.removeLayer(highlightLayer);
       if (searchMarkerFn) map.removeLayer(searchMarkerFn);
       edgeLabelsLayer.clearLayers();
+      vertexLayer.clearLayers(); // Xóa đỉnh
       document.getElementById('info-bar').style.display = 'none';
       currentSelectedFeature = null;
     }
@@ -562,6 +859,30 @@
 
     function locateUser() { map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true }); }
     map.on('locationfound', e => L.circleMarker(e.latlng, { radius: 8, color: '#fff', fillColor: '#0d6efd', fillOpacity: 1, weight: 3 }).addTo(map));
+
+    // Layer Panel Debounce Logic
+    let stylePanelTimeout;
+    function showLayerPanel() {
+      clearTimeout(stylePanelTimeout);
+      document.getElementById('style-panel').classList.add('show-panel');
+    }
+    function hideLayerPanel() {
+      stylePanelTimeout = setTimeout(() => {
+        document.getElementById('style-panel').classList.remove('show-panel');
+      }, 300); // 300ms gracetime
+    }
+
+    function toggleCoordPanel() {
+      const panel = document.getElementById('coord-panel');
+      const btn = document.getElementById('btn-toggle-coord');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'flex';
+        btn.innerHTML = '◀ Tìm tọa độ'; // Mũi tên trái để ẩn (theo yêu cầu)
+      } else {
+        panel.style.display = 'none';
+        btn.innerHTML = '▶ Tìm tọa độ'; // Mũi tên phải để hiện
+      }
+    }
   </script>
 </body>
 

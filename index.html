@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Tài Đỗ_Map_2025_7P_Full</title>
+  <title>Tài Đỗ_Map_2026</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -369,6 +369,39 @@
     .show-panel {
       display: grid !important;
     }
+
+    /* Styles for Measure Controls */
+    .btn-measure {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    .measure-active {
+      background: #28a745 !important;
+      color: white !important;
+    }
+
+    /* Measure label styles */
+    .measure-edge-label-inner {
+      background: var(--primary-white);
+      border: 1.5px solid #ff0000;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #ff0000;
+      white-space: nowrap;
+    }
+
+    .measure-area-label-inner {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid #ff0000;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ff0000;
+    }
   </style>
 </head>
 
@@ -420,7 +453,7 @@
       </div>
 
       <div class="input-group">
-        <input type="text" id="input-wgs84" placeholder="WGS84: Lat, Lng">
+        <input type="text" id="input-wgs84" placeholder="WGS84: Lat, Lng (hỗ trợ link GMaps, DMS)">
         <button class="btn-search" onclick="searchWGS84()">🔍 WGS</button>
       </div>
     </div>
@@ -430,10 +463,21 @@
         ĐC</label>
       <label class="checkbox-group"><input type="checkbox" id="chk-qh" checked onchange="toggleLayer('qh')"> Hiện
         QH</label>
-      <label class="checkbox-group"><input type="checkbox" id="chk-edges" checked onchange="updateEdges()"> Hiện
+      <label class="checkbox-group"><input type="checkbox" id="chk-edges" checked onchange="toggleEdgesAndVertices()">
+        Hiện
         Cạnh</label>
     </div>
+
+    <!-- Thêm nút đo khoảng cách và diện tích -->
+    <button id="btn-measure-distance" class="btn-measure" onclick="toggleMeasure('distance')">📏 Đo KC</button>
+    <button id="btn-measure-area" class="btn-measure" onclick="toggleMeasure('area')">📐 Đo DT</button>
+    <button class="btn-export" onclick="exportMeasureCoords()" style="display: none;" id="btn-export-measure">📥 Xuất TĐ
+      Đo</button>
+    <button class="btn-clear" onclick="clearMeasure()">✖ Xóa Đo</button>
   </div>
+
+  <button id="btn-toggle-top" class="btn-search" onclick="toggleTopPanel()"
+    style="position: absolute; top: 10px; right: 10px; z-index: 1000; padding: 9px 12px; min-width: 40px; background: var(--accent-green); color: white;">◀</button>
 
   <!-- Custom Layer Control UI -->
   <div class="map-style-control" onmouseenter="showLayerPanel()" onmouseleave="hideLayerPanel()">
@@ -476,6 +520,15 @@
         </div>
         <div class="map-type-label">Esri Topo</div>
       </div>
+      <div class="map-type-item" onclick="setBaseMap('Esri Hybrid', this)">
+        <div class="map-type-image"
+          style="background-image: url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0');">
+          <div
+            style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:url('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/0/0/0');pointer-events:none;">
+          </div>
+        </div>
+        <div class="map-type-label">Hỗn hợp Hình ảnh</div>
+      </div>
     </div>
   </div>
 
@@ -483,6 +536,17 @@
     <div class="info-container">
       <div id="info-content" style="display: flex; gap: 20px;"></div>
       <div id="direction-btn-container" style="display: flex; gap: 10px;"></div>
+      <!-- Thêm thông tin đo -->
+      <div id="measure-info" style="display: none; margin-left: 20px;">
+        <div class="info-item">
+          <span class="info-label">Khoảng Cách</span>
+          <span class="info-value" id="measure-distance-value">0 m</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">Diện Tích</span>
+          <span class="info-value" id="measure-area-value">0 m²</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -515,15 +579,34 @@
 
     // Esri World Imagery
     const esriWorld = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      maxZoom: 22,
+      maxNativeZoom: 18,
+      zIndex: 1,
       attribution: 'Tiles &copy; Esri'
     });
 
     // New Layers
     const esriTopo = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
+      maxZoom: 22,
+      maxNativeZoom: 19,
       attribution: 'Tiles &copy; Esri'
     });
+
+    const esriReference = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 22,
+      maxNativeZoom: 18,
+      zIndex: 3,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    const esriTransportation = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 22,
+      maxNativeZoom: 18,
+      zIndex: 2,
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    const esriHybrid = L.layerGroup([esriWorld, esriTransportation, esriReference]);
 
     // Mặc định hiển thị Hybrid
     googleHybrid.addTo(map);
@@ -534,7 +617,8 @@
       "Google Streets": googleStreets,
       "Google Terrain": googleTerrain,
       "Esri World Imagery": esriWorld,
-      "Esri World Topo": esriTopo
+      "Esri World Topo": esriTopo,
+      "Esri Hybrid": esriHybrid
     };
 
     // REMOVED DEFAULT CONTROL
@@ -555,6 +639,7 @@
     let dcData = null, currentSelectedFeature = null;
     let edgeLabelsLayer = L.layerGroup().addTo(map);
     let vertexLayer = L.layerGroup().addTo(map); // Layer chứa đỉnh thửa
+    let measureLabelsLayer = L.layerGroup().addTo(map); // Layer cho labels đo
     let currentKTT = 108.5;
 
     const fieldMapping = {
@@ -652,18 +737,19 @@
       highlightLayer = L.geoJSON(feature, { style: { color: "#dc3545", weight: 4, fillColor: "#0d6efd", fillOpacity: 0.2 } }).addTo(map);
       const center = layer.getBounds().getCenter();
       showInfoHorizontal(feature.properties, center.lat, center.lng);
-      updateEdges();
 
-      // Hiển thị đỉnh thửa
-      const orderedPts = getOrderedVertices(feature);
-      drawVertices(orderedPts);
+      if (document.getElementById('chk-edges').checked) {
+        updateEdges();
+        const orderedPts = getOrderedVertices(feature);
+        drawVertices(orderedPts);
+      }
 
       map.fitBounds(layer.getBounds(), { padding: [100, 100] });
     }
 
     function updateEdges() {
       edgeLabelsLayer.clearLayers();
-      if (!currentSelectedFeature || !document.getElementById('chk-edges').checked) return;
+      if (!currentSelectedFeature) return;
       let coords = (currentSelectedFeature.geometry.type === "Polygon") ? currentSelectedFeature.geometry.coordinates[0] : currentSelectedFeature.geometry.coordinates[0][0];
       for (let i = 0; i < coords.length - 1; i++) {
         let p1 = L.latLng(coords[i][1], coords[i][0]), p2 = L.latLng(coords[i + 1][1], coords[i + 1][0]);
@@ -697,6 +783,10 @@
 
     // 3. HIỂN THỊ TỌA ĐỘ KHI CLICK LÀM TRÒN 3 SỐ
     map.on('click', function (e) {
+      if (measureMode) {
+        addMeasurePoint(e.latlng);
+        return;
+      }
       const vn2000 = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [e.latlng.lng, e.latlng.lat]);
       L.popup().setLatLng(e.latlng).setContent(`
         <div style="text-align:center; font-size:13px;">
@@ -707,6 +797,12 @@
           </div>
         </div>
       `).openOn(map);
+    });
+
+    map.on('dblclick', function (e) {
+      if (measureMode) {
+        finishMeasure();
+      }
     });
 
     // Hàm xử lý logic lấy và sắp xếp đỉnh (Dùng chung cho hiển thị và xuất file)
@@ -842,12 +938,58 @@
 
     function searchWGS84() {
       const val = document.getElementById('input-wgs84').value.trim();
-      if (!val) return alert("Nhập Lat, Lng!");
-      let parts = val.split(/[,;\s]+/).map(Number).filter(n => !isNaN(n));
-      if (parts.length < 2) return alert("Cần nhập Latitude và Longitude!");
+      if (!val) return alert("Nhập Lat, Lng hoặc định dạng hỗ trợ!");
 
-      let lat = parts[0];
-      let lng = parts[1];
+      let lat, lng;
+
+      // 1. Kiểm tra nếu là link Google Maps (ví dụ: https://maps.app.goo.gl/...)
+      // Lưu ý: Link shortened không chứa trực tiếp coords, cần extract từ pattern hoặc giả định user copy coords từ link.
+      // Để đơn giản, kiểm tra nếu chứa "goo.gl" hoặc "maps.app" và extract coords nếu có pattern như @lat,lng
+      if (val.includes('maps.app.goo.gl') || val.includes('google.com/maps')) {
+        // Giả sử user copy full URL với @lat,lng,... 
+        const match = val.match(/@(-?[\d.,]+),(-?[\d.,]+)/);
+        if (match) {
+          lat = parseFloat(match[1].replace(',', '.'));
+          lng = parseFloat(match[2].replace(',', '.'));
+        } else {
+          return alert("Link Google Maps không chứa tọa độ hợp lệ! Hãy copy tọa độ trực tiếp.");
+        }
+      }
+      // 2. Kiểm tra định dạng độ phút giây (DMS): 12°39'43.0"N 108°01'44.9"E
+      else if (val.includes('°') && val.includes("'") && (val.includes('"') || val.includes('.')) && (val.includes('N') || val.includes('S')) && (val.includes('E') || val.includes('W'))) {
+        const dmsRegex = /(-?\d+)°(\d+)'([\d.]+)"?([NS])\s+(-?\d+)°(\d+)'([\d.]+)"?([EW])/i;
+        const match = val.match(dmsRegex);
+        if (match) {
+          const latDeg = parseInt(match[1]);
+          const latMin = parseInt(match[2]);
+          const latSec = parseFloat(match[3]);
+          const latHem = match[4].toUpperCase();
+          const lngDeg = parseInt(match[5]);
+          const lngMin = parseInt(match[6]);
+          const lngSec = parseFloat(match[7]);
+          const lngHem = match[8].toUpperCase();
+
+          lat = latDeg + latMin / 60 + latSec / 3600;
+          if (latHem === 'S') lat = -lat;
+
+          lng = lngDeg + lngMin / 60 + lngSec / 3600;
+          if (lngHem === 'W') lng = -lng;
+        } else {
+          return alert("Định dạng DMS không hợp lệ!");
+        }
+      }
+      // 3. Định dạng mặc định: lat, lng phân cách bởi dấu phẩy hoặc khoảng trắng, hỗ trợ dấu phẩy thập phân
+      else {
+        // Regex để lấy hai số có thể có dấu phẩy thập phân
+        const coordRegex = /([\d.,]+)[\s,;]+([\d.,]+)/;
+        const match = val.match(coordRegex);
+        if (match) {
+          lat = parseFloat(match[1].replace(',', '.'));
+          lng = parseFloat(match[2].replace(',', '.'));
+        } else {
+          return alert("Định dạng tọa độ không hợp lệ!");
+        }
+      }
 
       // Basic check for Vietnam bounds (Lat 8-24, Lng 102-110) just to warn, but allow map to fly anywhere
       map.flyTo([lat, lng], 18);
@@ -882,6 +1024,190 @@
         panel.style.display = 'none';
         btn.innerHTML = '▶ Tìm tọa độ'; // Mũi tên phải để hiện
       }
+    }
+
+    function toggleTopPanel() {
+      const panel = document.getElementById('top-panel');
+      const btn = document.getElementById('btn-toggle-top');
+      if (panel.style.display === 'none') {
+        panel.style.display = 'flex';
+        btn.innerHTML = '◀';
+      } else {
+        panel.style.display = 'none';
+        btn.innerHTML = '▶';
+      }
+    }
+
+    function toggleEdgesAndVertices() {
+      const checked = document.getElementById('chk-edges').checked;
+      if (checked) {
+        map.addLayer(edgeLabelsLayer);
+        map.addLayer(vertexLayer);
+        if (currentSelectedFeature) {
+          updateEdges();
+          const orderedPts = getOrderedVertices(currentSelectedFeature);
+          drawVertices(orderedPts);
+        }
+      } else {
+        map.removeLayer(edgeLabelsLayer);
+        map.removeLayer(vertexLayer);
+      }
+    }
+
+    // Thêm chức năng đo khoảng cách và diện tích
+    let measureMode = null; // 'distance' or 'area'
+    let measurePoints = []; // Mảng LatLng
+    let measureLayer = L.layerGroup().addTo(map); // Layer cho polyline/polygon và markers
+    let measureDistance = 0;
+    let measureArea = 0;
+
+    function toggleMeasure(type) {
+      if (measureMode === type) {
+        finishMeasure();
+        return;
+      }
+      clearMeasure();
+      measureMode = type;
+      document.getElementById('btn-measure-distance').classList.remove('measure-active');
+      document.getElementById('btn-measure-area').classList.remove('measure-active');
+      if (type === 'distance') {
+        document.getElementById('btn-measure-distance').classList.add('measure-active');
+      } else if (type === 'area') {
+        document.getElementById('btn-measure-area').classList.add('measure-active');
+      }
+      document.getElementById('measure-info').style.display = 'flex';
+      document.getElementById('btn-export-measure').style.display = 'inline-flex';
+      alert(`Chế độ đo ${type === 'distance' ? 'khoảng cách' : 'diện tích'} đã bật. Click để thêm điểm, double click để kết thúc.`);
+    }
+
+    function addMeasurePoint(latlng) {
+      measurePoints.push(latlng);
+      L.circleMarker(latlng, { radius: 5, color: '#ff0000' }).addTo(measureLayer);
+      updateMeasure();
+    }
+
+    function updateMeasure() {
+      measureLayer.clearLayers();
+      measureLabelsLayer.clearLayers();
+      measurePoints.forEach(pt => L.circleMarker(pt, { radius: 5, color: '#ff0000' }).addTo(measureLayer));
+
+      if (measurePoints.length < 2) return;
+
+      let isClosed = measureMode === 'area' && measurePoints.length >= 3 && measurePoints[0].equals(measurePoints[measurePoints.length - 1]);
+
+      // Vẽ line hoặc polygon
+      let drawPoints = [...measurePoints];
+      if (measureMode === 'area' && isClosed) {
+        L.polygon(drawPoints, { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3 }).addTo(measureLayer);
+      } else if (measureMode === 'area') {
+        L.polygon(drawPoints, { color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3 }).addTo(measureLayer);
+      } else {
+        L.polyline(drawPoints, { color: '#ff0000' }).addTo(measureLayer);
+      }
+
+      // Tính khoảng cách
+      measureDistance = 0;
+      for (let i = 0; i < measurePoints.length - 1; i++) {
+        let dist = measurePoints[i].distanceTo(measurePoints[i + 1]);
+        measureDistance += dist;
+
+        // Hiển thị label độ dài trên cạnh
+        let p1 = measurePoints[i], p2 = measurePoints[i + 1];
+        if (dist > 0.3) {
+          let mid = [(p1.lat + p2.lat) / 2, (p1.lng + p2.lng) / 2];
+          let rotation = -Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
+          if (rotation > 90) rotation -= 180; if (rotation < -90) rotation += 180;
+          L.marker(mid, {
+            icon: L.divIcon({ className: 'measure-edge-label-container', html: `<div class="measure-edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(2)}m</div>`, iconSize: [40, 20] }), interactive: false
+          }).addTo(measureLabelsLayer);
+        }
+      }
+      document.getElementById('measure-distance-value').innerText = `${measureDistance.toFixed(2)} m`;
+
+      // Tính diện tích (sử dụng shoelace formula trên projected coords VN2000)
+      measureArea = 0;
+      if (measureMode === 'area' && measurePoints.length >= 3) {
+        let calcPoints = isClosed ? measurePoints.slice(0, -1) : measurePoints;
+        const projected = calcPoints.map(pt => proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [pt.lng, pt.lat]));
+        let sum = 0;
+        for (let i = 0; i < projected.length; i++) {
+          const j = (i + 1) % projected.length;
+          sum += (projected[i][0] * projected[j][1]) - (projected[j][0] * projected[i][1]);
+        }
+        measureArea = Math.abs(sum / 2);
+        document.getElementById('measure-area-value').innerText = `${measureArea.toFixed(2)} m²`;
+
+        // Hiển thị label diện tích bên trong vùng
+        if (isClosed || measurePoints.length >= 3) {
+          const bounds = L.latLngBounds(calcPoints);
+          const center = bounds.getCenter();
+          L.marker(center, {
+            icon: L.divIcon({ className: 'measure-area-label-container', html: `<div class="measure-area-label-inner">${measureArea.toFixed(2)} m²</div>`, iconSize: [80, 30] }), interactive: false
+          }).addTo(measureLabelsLayer);
+        }
+
+        // Hiển thị kích thước giữa điểm cuối và điểm đầu nếu chưa đóng
+        if (!isClosed && measurePoints.length >= 3) {
+          let p1 = measurePoints[measurePoints.length - 1];
+          let p2 = measurePoints[0];
+          let dist = p1.distanceTo(p2);
+          if (dist > 0.3) {
+            let mid = [(p1.lat + p2.lat) / 2, (p1.lng + p2.lng) / 2];
+            let rotation = -Math.atan2(p2.lat - p1.lat, p2.lng - p1.lng) * 180 / Math.PI;
+            if (rotation > 90) rotation -= 180; if (rotation < -90) rotation += 180;
+            L.marker(mid, {
+              icon: L.divIcon({ className: 'measure-edge-label-container', html: `<div class="measure-edge-label-inner" style="transform: rotate(${rotation}deg);">${dist.toFixed(2)}m</div>`, iconSize: [40, 20] }), interactive: false
+            }).addTo(measureLabelsLayer);
+          }
+        }
+      } else {
+        document.getElementById('measure-area-value').innerText = '0 m²';
+      }
+    }
+
+    function finishMeasure() {
+      if (measureMode === 'area' && measurePoints.length >= 3 && !measurePoints[0].equals(measurePoints[measurePoints.length - 1])) {
+        measurePoints.push(measurePoints[0]);
+      }
+      updateMeasure();
+      measureMode = null;
+      document.getElementById('btn-measure-distance').classList.remove('measure-active');
+      document.getElementById('btn-measure-area').classList.remove('measure-active');
+    }
+
+    function clearMeasure() {
+      measurePoints = [];
+      measureLayer.clearLayers();
+      measureLabelsLayer.clearLayers();
+      measureDistance = 0;
+      measureArea = 0;
+      document.getElementById('measure-distance-value').innerText = '0 m';
+      document.getElementById('measure-area-value').innerText = '0 m²';
+      document.getElementById('measure-info').style.display = 'none';
+      document.getElementById('btn-export-measure').style.display = 'none';
+      measureMode = null;
+      document.getElementById('btn-measure-distance').classList.remove('measure-active');
+      document.getElementById('btn-measure-area').classList.remove('measure-active');
+    }
+
+    function exportMeasureCoords() {
+      if (measurePoints.length < 2) return alert("Cần ít nhất 2 điểm để xuất!");
+
+      let ordered = measurePoints.map(pt => {
+        let xy = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [pt.lng, pt.lat]);
+        return { x: xy[1], y: xy[0] }; // x: Northing, y: Easting
+      });
+
+      let content = "STT\tX(m)\tY(m)\tZ(m)\n";
+      ordered.forEach((pt, idx) => {
+        content += `${idx + 1}\t${pt.x.toFixed(3)}\t${pt.y.toFixed(3)}\t0.000\n`;
+      });
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `ToaDo_Do_${measureMode || 'Vung'}.txt`;
+      link.click();
     }
   </script>
 </body>

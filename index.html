@@ -561,7 +561,7 @@
       100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
     }
 
-    /* ĐÃ THÊM: CSS CHO BẢNG HIỂN THỊ SAI SỐ GPS */
+    /* CSS CHO BẢNG HIỂN THỊ SAI SỐ GPS */
     #gps-accuracy-display {
       position: absolute;
       bottom: 370px;
@@ -720,7 +720,8 @@
         tất</button><button class="split-btn btn-split-cancel" onclick="closeSplitPanel()">❌ Đóng</button></div>
   </div>
   <div id="map"></div>
-  <script>const map = L.map('map', {
+  <script>
+    const map = L.map('map', {
       maxZoom: 22, zoomControl: false
     }).setView([12.667, 108.038], 15);
 
@@ -792,9 +793,7 @@
       "Esri World Imagery": esriWorld,
       "Esri World Topo": esriTopo,
       "Esri Hybrid": esriHybrid
-    }
-
-      ;
+    };
 
     function setBaseMap(name, el) {
       Object.keys(baseMaps).forEach(k => map.removeLayer(baseMaps[k]));
@@ -820,101 +819,32 @@
       "DIENTICH": "Diện tích (m²)",
       "KHLOAIDAT": "Loại đất",
       "TENCHU": "Tên chủ"
-    }
+    };
 
-      ;
-
-    const provinces = [{
-      name: "Điện Biên + Lai Châu", ktt: 103.00
-    }
-
-      ,
-    {
-      name: "Sơn La", ktt: 104.00
-    }
-
-      ,
-    {
-      name: "Cà Mau + Kiên Giang", ktt: 104.50
-    }
-
-      ,
-    {
-      name: "An Giang + Lào Cai + Nghệ An + Phú Thọ + Yên Bái", ktt: 104.75
-    }
-
-      ,
-    {
-      name: "Bạc Liêu + Cần Thơ + Đồng Tháp + Hà Nam + Hà Nội + Hậu Giang + Ninh Bình + Thanh Hóa + Vĩnh Phúc", ktt: 105.00
-    }
-
-      ,
-    {
-      name: "Bắc Ninh + Cao Bằng + Bến Tre + Bình Dương + Hải Dương + Hà Giang + Hà Tĩnh + Hưng Yên + Nam Định + Sóc Trăng + Tây Ninh + Thái Bình + Trà Vinh + Vĩnh Long", ktt: 105.50
-    }
-
-      ,
-    {
-      name: "Hải Phòng + TP. Hồ Chí Minh + Long An + Tiền Giang", ktt: 105.75
-    }
-
-      ,
-    {
-      name: "Hòa Bình + Quảng Bình + Tuyên Quang", ktt: 106.00
-    }
-
-      ,
-    {
-      name: "Bình Phước + Quảng Trị", ktt: 106.25
-    }
-
-      ,
-    {
-      name: "Bắc Kạn + Thái Nguyên", ktt: 106.50
-    }
-
-      ,
-    {
-      name: "Kon Tum", ktt: 107.50
-    }
-
-      ,
-    {
-      name: "Bắc Giang + Thừa Thiên Huế", ktt: 107.00
-    }
-
-      ,
-    {
-      name: "Lạng Sơn", ktt: 107.25
-    }
-
-      ,
-    {
-      name: "Bà Rịa - Vũng Tàu + Đà Nẵng + Đồng Nai + Lâm Đồng + Quảng Nam + Quảng Ninh", ktt: 107.75
-    }
-
-      ,
-    {
-      name: "Bình Định + Khánh Hòa + Ninh Thuận", ktt: 108.25
-    }
-
-      ,
-    {
-      name: "Quảng Ngãi", ktt: 108.00
-    }
-
-      ,
-    {
-      name: "Bình Thuận + Đắk Lắk + Đắk Nông + Gia Lai + Phú Yên", ktt: 108.50
-    }
-
+    const provinces = [
+      { name: "Điện Biên + Lai Châu", ktt: 103.00 },
+      { name: "Sơn La", ktt: 104.00 },
+      { name: "Cà Mau + Kiên Giang", ktt: 104.50 },
+      { name: "An Giang + Lào Cai + Nghệ An + Phú Thọ + Yên Bái", ktt: 104.75 },
+      { name: "Bạc Liêu + Cần Thơ + Đồng Tháp + Hà Nam + Hà Nội + Hậu Giang + Ninh Bình + Thanh Hóa + Vĩnh Phúc", ktt: 105.00 },
+      { name: "Bắc Ninh + Cao Bằng + Bến Tre + Bình Dương + Hải Dương + Hà Giang + Hà Tĩnh + Hưng Yên + Nam Định + Sóc Trăng + Tây Ninh + Thái Bình + Trà Vinh + Vĩnh Long", ktt: 105.50 },
+      { name: "Hải Phòng + TP. Hồ Chí Minh + Long An + Tiền Giang", ktt: 105.75 },
+      { name: "Hòa Bình + Quảng Bình + Tuyên Quang", ktt: 106.00 },
+      { name: "Bình Phước + Quảng Trị", ktt: 106.25 },
+      { name: "Bắc Kạn + Thái Nguyên", ktt: 106.50 },
+      { name: "Kon Tum", ktt: 107.50 },
+      { name: "Bắc Giang + Thừa Thiên Huế", ktt: 107.00 },
+      { name: "Lạng Sơn", ktt: 107.25 },
+      { name: "Bà Rịa - Vũng Tàu + Đà Nẵng + Đồng Nai + Lâm Đồng + Quảng Nam + Quảng Ninh", ktt: 107.75 },
+      { name: "Bình Định + Khánh Hòa + Ninh Thuận", ktt: 108.25 },
+      { name: "Quảng Ngãi", ktt: 108.00 },
+      { name: "Bình Thuận + Đắk Lắk + Đắk Nông + Gia Lai + Phú Yên", ktt: 108.50 }
     ].sort((a, b) => a.name.localeCompare(b.name));
 
     const selProv = document.getElementById('sel-province');
 
     provinces.forEach(p => {
       let displayName = p.name;
-
       if (displayName.length > 35) {
         displayName = displayName.substring(0, 35) + "...";
       }
@@ -931,21 +861,18 @@
       document.getElementById('lbl-province').innerText = "TỈNH/TP (KTT)";
       updateVN2000(parseFloat(this.value));
       reprojectCurrentData();
-    }
-
-      ;
+    };
 
     function updateVN2000(ktt) {
       currentKTT = ktt;
       const p7 = "+towgs84=-191.90441429,-39.30318279,-111.45032835,0.00928836,-0.01975479,0.00427372,0.252906278";
-
       const def = `+proj=tmerc +lat_0=0 +lon_0=${ktt} +k=0.9999 +x_0=500000 +y_0=0 +ellps=WGS84 ${p7} +units=m +no_defs`;
       proj4.defs("VN2000_Current", def);
     }
 
     updateVN2000(currentKTT);
 
-    // --- XỬ LÝ ĐỌC FILE (GeoJSON + Shapefile) ---
+    // --- XỬ LÝ ĐỌC FILE (ĐƯỢC CẬP NHẬT TỪ BẢN 230126) ---
     document.getElementById('file-dc').onchange = e => handleFile(e.target.files[0], 'dc');
     document.getElementById('file-qh').onchange = e => handleFile(e.target.files[0], 'qh');
 
@@ -961,7 +888,7 @@
 
           if (prjFileName) {
             const prjText = await zip.files[prjFileName].async("string");
-            const match = prjText.match(/PARAMETER\[\s*"(?:Central_Meridian|central_meridian)" \s*, \s*([\d.]+)\s*\]/i);
+            const match = prjText.match(/PARAMETER\[\s*"(?:Central_Meridian|central_meridian)"\s*,\s*([\d.]+)\s*\]/i);
 
             if (match && match[1]) {
               const detectedKTT = parseFloat(match[1]);
@@ -970,39 +897,26 @@
               updateUIWithDetectedKTT(detectedKTT);
               zip.remove(prjFileName);
 
-              const newZipContent = await zip.generateAsync({
-                type: "arraybuffer"
-              });
+              const newZipContent = await zip.generateAsync({ type: "arraybuffer" });
               processShapefileBuffer(newZipContent, type, file.name);
-              return;
+              return; 
             }
           }
 
           const buffer = await file.arrayBuffer();
           processShapefileBuffer(buffer, type, file.name);
 
-        }
-
-        else if (fileName.endsWith('.shp')) {
-          const buffer = await file.arrayBuffer();
-          processShapefileBuffer(buffer, type, file.name);
-        }
-
-        else {
+        } else if (fileName.endsWith('.shp')) {
+             const buffer = await file.arrayBuffer();
+             processShapefileBuffer(buffer, type, file.name);
+        } else {
           const text = await file.text();
-
           try {
             const json = JSON.parse(text);
             finishLoad(json, type);
-          }
-
-          catch (e) {
-            alert("Lỗi JSON không hợp lệ!"); hideLoading();
-          }
+          } catch (e) { alert("Lỗi JSON không hợp lệ!"); hideLoading(); }
         }
-      }
-
-      catch (err) {
+      } catch (err) {
         console.error(err);
         alert("Lỗi đọc file: " + err.message);
         hideLoading();
@@ -1039,11 +953,8 @@
 
         setTimeout(() => {
           finishLoad(geojson, type);
-
           alert(`Đã tải xong: ${fname}\n(Hệ tọa độ đã được xử lý tự động)`);
-        }
-
-          , 100);
+        }, 100);
 
       }).catch(err => {
         alert("Lỗi shp.js: " + err);
@@ -1064,9 +975,7 @@
 
       if (type === 'dc') {
         dcData = json; renderDC(json);
-      }
-
-      else {
+      } else {
         qhData = json; renderQH(json);
       }
 
@@ -1090,16 +999,12 @@
         coord[0] = wgs[0];
         coord[1] = wgs[1];
         return coord;
-      }
-
-        ;
+      };
 
       const traverseCoords = (coords) => {
         if (typeof coords[0] === 'number') transformPoint(coords);
         else if (Array.isArray(coords)) coords.forEach(c => traverseCoords(c));
-      }
-
-        ;
+      };
 
       const features = Array.isArray(geojson) ? geojson : (geojson.features || [geojson]);
 
@@ -1128,9 +1033,7 @@
         }
 
         hideLoading();
-      }
-
-        , 100);
+      }, 100);
     }
 
     function renderDC(data) {
@@ -1139,9 +1042,7 @@
       dcLayer = L.geoJSON(data, {
         style: {
           color: "#ffeb3b", weight: 1.5, fillOpacity: 0.1
-        }
-
-        ,
+        },
         onEachFeature: (f, l) => l.on('click', e => {
           processSelection(f, l); L.DomEvent.stopPropagation(e);
         })
@@ -1267,9 +1168,7 @@
           y: xy[0], // Easting
           lng: p[0],
           lat: p[1]
-        }
-
-          ;
+        };
       });
 
       let maxIdx = 0;
@@ -1287,16 +1186,40 @@
       orderedPts.forEach((pt, idx) => {
         const stt = idx + 1;
 
-        L.marker([pt.lat, pt.lng], {
+        const marker = L.marker([pt.lat, pt.lng], {
           icon: L.divIcon({
 
-            className: 'vertex-icon',
-            html: `<div class="vertex-label">${stt}</div>`,
+            className: 'vertex-icon clickable',
+            html: `<div class="vertex-label" id="v-label-${idx}">${stt}</div>`,
             iconSize: [20, 20],
             iconAnchor: [10, 10]
           }),
-          interactive: false
+          interactive: true
         }).addTo(vertexLayer);
+
+        marker.on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          onVertexClick(idx);
+        });
+      });
+
+      // Draw split points if any
+      splitPoints.forEach((pt, i) => {
+        const marker = L.marker([pt.lat, pt.lng], {
+          icon: L.divIcon({
+
+            className: 'vertex-icon clickable',
+            html: `<div class="vertex-label" style="background:#dc3545; border:2px solid yellow;">P${i + 1}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          }),
+          interactive: true
+        }).addTo(vertexLayer);
+
+        marker.on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          onSplitPointClick(pt, i);
+        });
       });
     }
 
@@ -1327,9 +1250,7 @@
 
       const {
         jsPDF
-      }
-
-        = window.jspdf;
+      } = window.jspdf;
       const doc = new jsPDF();
 
       const props = currentSelectedFeature.properties;
@@ -1415,9 +1336,7 @@
 
       if (vX > 800000 && vY < 800000) {
         e = vY; n = vX;
-      }
-
-      else if (vY > 800000 && vX < 800000) {
+      } else if (vY > 800000 && vX < 800000) {
         e = vX; n = vY;
       }
 
@@ -1428,9 +1347,7 @@
         map.flyTo([wgs[1], wgs[0]], 18);
 
         createSearchMarker([wgs[1], wgs[0]], `<div style='text-align:center'><b>VN2000 Found</b><br>X: ${n}<br>Y: ${e}</div>`);
-      }
-
-      catch (err) {
+      } catch (err) {
         alert("Lỗi chuyển đổi tọa độ! Kiểm tra lại số liệu.");
       }
     }
@@ -1447,27 +1364,19 @@
         if (match) {
           lat = parseFloat(match[1].replace(',', '.'));
           lng = parseFloat(match[2].replace(',', '.'));
-        }
-
-        else {
+        } else {
           return alert("Link Google Maps không chứa tọa độ hợp lệ!");
         }
-      }
-
-      else if (val.includes('°')) {
+      } else if (val.includes('°')) {
         return alert("Vui lòng nhập định dạng thập phân (Lat, Lng) để chính xác nhất.");
-      }
-
-      else {
+      } else {
         const coordRegex = /([\d., ]+)[\s, ; ]+([\d., ]+)/;
         const match = val.match(coordRegex);
 
         if (match) {
           lat = parseFloat(match[1].replace(',', '.'));
           lng = parseFloat(match[2].replace(',', '.'));
-        }
-
-        else {
+        } else {
           return alert("Định dạng tọa độ không hợp lệ!");
         }
       }
@@ -1579,9 +1488,7 @@
     function hideLayerPanel() {
       stylePanelTimeout = setTimeout(() => {
         document.getElementById('style-panel').classList.remove('show-panel');
-      }
-
-        , 300);
+      }, 300);
     }
 
     function toggleCoordPanel() {
@@ -1591,9 +1498,7 @@
       if (panel.style.display === 'none') {
         panel.style.display = 'flex';
         btn.innerHTML = '◀ Tìm tọa độ';
-      }
-
-      else {
+      } else {
         panel.style.display = 'none';
         btn.innerHTML = '▶ Tìm tọa độ';
       }
@@ -1606,9 +1511,7 @@
       if (panel.style.display === 'none') {
         panel.style.display = 'flex';
         btn.innerHTML = '◀';
-      }
-
-      else {
+      } else {
         panel.style.display = 'none';
         btn.innerHTML = '▶';
       }
@@ -1626,9 +1529,7 @@
           const orderedPts = getOrderedVertices(currentSelectedFeature);
           drawVertices(orderedPts);
         }
-      }
-
-      else {
+      } else {
         map.removeLayer(edgeLabelsLayer);
         map.removeLayer(vertexLayer);
       }
@@ -1653,9 +1554,7 @@
 
       if (type === 'distance') {
         document.getElementById('btn-measure-distance').classList.add('measure-active');
-      }
-
-      else if (type === 'area') {
+      } else if (type === 'area') {
         document.getElementById('btn-measure-area').classList.add('measure-active');
       }
 
@@ -1723,15 +1622,11 @@
         L.polygon(drawPoints, {
           color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3
         }).addTo(measureLayer);
-      }
-
-      else if (measureMode === 'area') {
+      } else if (measureMode === 'area') {
         L.polygon(drawPoints, {
           color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.3
         }).addTo(measureLayer);
-      }
-
-      else {
+      } else {
         L.polyline(drawPoints, {
           color: '#ff0000'
         }).addTo(measureLayer);
@@ -1804,9 +1699,7 @@
             }).addTo(measureLabelsLayer);
           }
         }
-      }
-
-      else {
+      } else {
         document.getElementById('measure-area-value').innerText = '0 m²';
       }
     }
@@ -1849,9 +1742,7 @@
 
         return {
           x: xy[1], y: xy[0]
-        }
-
-          ;
+        };
       });
 
       let content = "STT\tX(m)\tY(m)\tZ(m)\n";
@@ -1917,49 +1808,6 @@
       }
     }
 
-    function drawVertices(pts) {
-      vertexLayer.clearLayers();
-
-      pts.forEach((pt, idx) => {
-        const stt = idx + 1;
-
-        const marker = L.marker([pt.lat, pt.lng], {
-          icon: L.divIcon({
-
-            className: 'vertex-icon clickable',
-            html: `<div class="vertex-label" id="v-label-${idx}">${stt}</div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-          }),
-          interactive: true
-        }).addTo(vertexLayer);
-
-        marker.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          onVertexClick(idx);
-        });
-      });
-
-      // Draw split points if any
-      splitPoints.forEach((pt, i) => {
-        const marker = L.marker([pt.lat, pt.lng], {
-          icon: L.divIcon({
-
-            className: 'vertex-icon clickable',
-            html: `<div class="vertex-label" style="background:#dc3545; border:2px solid yellow;">P${i + 1}</div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          }),
-          interactive: true
-        }).addTo(vertexLayer);
-
-        marker.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          onSplitPointClick(pt, i);
-        });
-      });
-    }
-
     function onSplitPointClick(pt, idx) {
       if (!splitMode || !isSelectingSplitLine) return;
     }
@@ -1976,9 +1824,7 @@
         if (existingIdx >= 0) {
           selectionForSplit.splice(existingIdx, 1);
           highlightVertex(idx, false);
-        }
-
-        else {
+        } else {
           if (selectionForSplit.length >= 2) {
             alert("Chỉ được chọn 2 điểm!");
             return;
@@ -2004,9 +1850,7 @@
         highlightVertex(idx, true);
 
         updateSplitInstruction(`Đã chọn đỉnh ${idx + 1}. Hãy click đỉnh thứ 2 của cạnh.`);
-      }
-
-      else if (splitStep === 1) {
+      } else if (splitStep === 1) {
         const v1 = splitFirstVertexIdx;
         const v2 = idx;
 
@@ -2053,18 +1897,14 @@
         resetSplitState();
         updateSplitInstruction("Đã thêm điểm. Chọn 2 điểm để tách hoặc tạo thêm điểm.");
       }
-    }
-
-      ;
+    };
 
     function insertNewVertex(lng, lat, v1Idx, v2Idx) {
       const xy = proj4(proj4.defs('EPSG:4326'), proj4.defs('VN2000_Current'), [lng, lat]);
 
       const newPt = {
         lng, lat, x: xy[1], y: xy[0]
-      }
-
-        ;
+      };
 
       const len = orderedPts.length;
       // Rebuild polygon ring
@@ -2277,15 +2117,10 @@
       }
     }
 
-
-
-
     function exportSplitPDF(allParcels) {
       const {
         jsPDF
-      }
-
-        = window.jspdf;
+      } = window.jspdf;
       const doc = new jsPDF();
 
       doc.setFontSize(16);
@@ -2313,8 +2148,6 @@
 
       doc.save(`TachThua_To_${currentSelectedFeature.properties.SHBANDO}_Thua_${currentSelectedFeature.properties.SHTHUA}.pdf`);
     }
-
-
 
   </script>
 </body>
